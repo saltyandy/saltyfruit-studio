@@ -1,0 +1,76 @@
+{
+  "frames": [
+    {
+      "src": "process/01-wf-arrival.png",
+      "tag": "WF-01",
+      "kind": "Wireframe",
+      "label": "Arrival"
+    },
+    {
+      "src": "process/02-wf-orb-home.png",
+      "tag": "WF-02",
+      "kind": "Wireframe",
+      "label": "Orb Home"
+    },
+    {
+      "src": "process/03-wf-insight-anatomy.png",
+      "tag": "WF-03",
+      "kind": "Wireframe",
+      "label": "Insight Anatomy"
+    },
+    {
+      "src": "process/04-wf-flow-variants.png",
+      "tag": "WF-04",
+      "kind": "Wireframe",
+      "label": "Flow Variants"
+    },
+    {
+      "src": "process/05-wf-swap-flow.png",
+      "tag": "WF-05",
+      "kind": "Wireframe",
+      "label": "Swap Flow"
+    },
+    {
+      "src": "process/06-wf-mood-selector.png",
+      "tag": "WF-06",
+      "kind": "Wireframe",
+      "label": "Mood Selector"
+    },
+    {
+      "src": "process/07-wf-execution-signing.png",
+      "tag": "WF-07",
+      "kind": "Wireframe",
+      "label": "Execution Signing"
+    },
+    {
+      "src": "process/08-wf-insights-verbose.png",
+      "tag": "WF-08",
+      "kind": "Wireframe",
+      "label": "Insights Verbose"
+    },
+    {
+      "src": "process/09-wf-mood-explorations.png",
+      "tag": "WF-09",
+      "kind": "Wireframe",
+      "label": "Mood Explorations"
+    },
+    {
+      "src": "process/10-ui-mood-explorations.png",
+      "tag": "UI-10",
+      "kind": "Design",
+      "label": "Mood Explorations"
+    },
+    {
+      "src": "process/11-ui-insights-verbose.png",
+      "tag": "UI-11",
+      "kind": "Design",
+      "label": "Insights Verbose"
+    },
+    {
+      "src": "process/12-ui-the-orb.png",
+      "tag": "UI-12",
+      "kind": "Design",
+      "label": "The Orb"
+    }
+  ]
+}

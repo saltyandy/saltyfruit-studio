@@ -1,0 +1,6 @@
+.DS_Store
+node_modules/
+
+# Over GitHub's 100MB file limit — keep local only
+assets/video/orb-backdrop.mp4
+assets/lab-live/orb-backdrop.mp4
