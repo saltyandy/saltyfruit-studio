@@ -8,9 +8,10 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="case.css" />
+  <link rel="stylesheet" href="assets/lab-live/lab-live.css" />
 </head>
 <body>
 
@@ -74,13 +75,18 @@
       </div>
 
       <div class="duo">
-        <div class="media r-1x1">
-          <video src="assets/video/orb-notifications.mp4" autoplay muted loop playsinline preload="metadata"></video>
+        <!-- 04 · live tile: the app's real SurfacedInsight component plays
+             over the orb-backdrop loop (see lab-live/) -->
+        <div class="media r-1x1" id="lab-live-root" data-video="assets/video/orb-backdrop.mp4"></div>
+        <!-- 05 · design system boards: 1:1 split — system V1 atoms above, transaction models below -->
+        <div class="media r-1x1 ds-screens">
+          <img src="assets/img/nuvolari/design-system-1x1.webp" alt="Orb design system — core components and transaction models on the Nuvolari backdrop" />
         </div>
-        <div class="ph r-1x1"><p class="ph-label">05 · Type specimen</p></div>
       </div>
 
-      <div class="ph r-21x9"><p class="ph-label">03 · Poster motion · full-width video</p></div>
+      <div class="media r-16x9">
+        <video src="assets/video/orb-hero.mp4" autoplay muted loop playsinline preload="metadata"></video>
+      </div>
 
       <div class="duo">
         <div class="ph r-4x5"><p class="ph-label">07 · Brand element close-up</p></div>
@@ -213,5 +219,6 @@
   </aside>
 
   <script src="site.js"></script>
+  <script src="assets/lab-live/lab-live.js" defer></script>
 </body>
 </html>
