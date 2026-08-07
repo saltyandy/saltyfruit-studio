@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FRUTA — Salty Fruit</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #b98f57; }
+  #app { width: 100%; height: 100%; touch-action: none; }
+  #page {
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    background: rgba(30, 12, 14, 0.55); backdrop-filter: blur(3px); z-index: 10;
+  }
+  #page .card {
+    background: #f2ecd8; color: #8c1f18; padding: 3rem 4rem; border-radius: 18px;
+    font-family: Georgia, serif; text-align: center; max-width: 70vw;
+  }
+  #page h1 { margin: 0 0 0.5rem; font-size: 2.2rem; letter-spacing: 0.05em; }
+  #page p { color: #5a4632; font-family: -apple-system, sans-serif; }
+  #hint {
+    position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+    color: rgba(242, 236, 216, 0.85); font-family: -apple-system, sans-serif;
+    font-size: 13px; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="page"><div class="card"><h1 id="page-title"></h1><p>placeholder page — click anywhere to close</p></div></div>
+<div id="hint">drag the fruit around · click a pip to open a page</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+    "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import * as CANNON from 'cannon-es';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
+const OX = 8;                       // the Blender stage offset
+const TABLE_Y = 0.24;               // tabletop height
+
+// ---------- palette (matches the Blender toon materials) ----------
+const PALETTE = {
+  Fruta_wall:   0xb15560, Fruta_banner: 0xefe6c3, Fruta_text: 0xa32c20,
+  Fruta_table:  0x8a5a2c, Fruta_bowl:  0xf0ece2, Fruta_orange: 0xe08324,
+  Melon_flesh:  0xcc4f38, Melon_cream: 0xefe9c8, Melon_rind: 0x2e6b34,
+  banana: 0xf0d34e, seed: 0x201a16,
+};
+
+const PIP_PAGES = ['Work', 'About', 'Playground', 'Studio', 'Journal', 'Shop', 'Contact'];
+
+// ---------- renderer / scene ----------
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.getElementById('app').appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xb15560);
+
+const camera = new THREE.PerspectiveCamera(32, 1, 0.05, 30);
+camera.position.set(OX, 1.0, 3.0);
+camera.lookAt(OX, 0.98, 0);
+
+// soft-but-directional light, like the render
+const sun = new THREE.DirectionalLight(0xfff6e8, 2.6);
+sun.position.set(OX - 1.4, 2.6, 1.6);
+sun.target.position.set(OX, 0.5, 0);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.radius = 7;
+sun.shadow.camera.left = -1.5; sun.shadow.camera.right = 1.5;
+sun.shadow.camera.top = 2; sun.shadow.camera.bottom = -0.5;
+sun.shadow.camera.near = 0.5; sun.shadow.camera.far = 8;
+sun.shadow.bias = -0.0005;
+scene.add(sun, sun.target);
+scene.add(new THREE.AmbientLight(0xfff2e0, 1.1));
+
+// ---------- painterly toon material factory ----------
+// 3-step gradient for soft banding
+const grad = new Uint8Array([110, 190, 255]);
+const gradientMap = new THREE.DataTexture(grad, 3, 1, THREE.RedFormat);
+gradientMap.needsUpdate = true;
+
+// tileable stroke-noise canvas, multiplied over every color
+function makeNoiseTexture() {
+  const s = 256, c = document.createElement('canvas');
+  c.width = c.height = s;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#d9d4cc'; ctx.fillRect(0, 0, s, s);
+  for (let i = 0; i < 2200; i++) {
+    const g = 190 + Math.random() * 65;
+    ctx.strokeStyle = `rgba(${g},${g - 4},${g - 10},0.5)`;
+    ctx.lineWidth = 1 + Math.random() * 3;
+    const x = Math.random() * s, y = Math.random() * s, a = Math.random() * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + Math.cos(a) * (6 + Math.random() * 22), y + Math.sin(a) * (2 + Math.random() * 6));
+    ctx.stroke();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const noiseTex = makeNoiseTexture();
+
+function paintMat(hex, noiseScale = 1.6) {
+  const m = new THREE.MeshToonMaterial({ color: hex, gradientMap, map: noiseTex });
+  m.map = noiseTex.clone();
+  m.map.repeat.set(noiseScale, noiseScale);
+  return m;
+}
+
+// ---------- physics ----------
+const world = new CANNON.World({ gravity: new CANNON.Vec3(0, -9.82, 0) });
+world.defaultContactMaterial.friction = 0.5;
+world.defaultContactMaterial.restitution = 0.15;
+world.allowSleep = true;
+world.solver.iterations = 12;
+
+// tabletop + back wall
+const tableBody = new CANNON.Body({ type: CANNON.Body.STATIC, shape: new CANNON.Plane() });
+tableBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
+tableBody.position.set(OX, TABLE_Y, 0);
+world.addBody(tableBody);
+const wallBody = new CANNON.Body({ type: CANNON.Body.STATIC, shape: new CANNON.Plane() });
+wallBody.position.set(OX, 0, -0.55);
+world.addBody(wallBody);
+// invisible front glass so fruit can't fly at the camera
+const glassBody = new CANNON.Body({ type: CANNON.Body.STATIC, shape: new CANNON.Plane() });
+glassBody.quaternion.setFromEuler(0, Math.PI, 0);
+glassBody.position.set(OX, 0, 0.55);
+world.addBody(glassBody);
+
+// bowl: ring of boxes forming the scooped wall + a disc base
+const bowlBody = new CANNON.Body({ type: CANNON.Body.STATIC });
+const SEG = 14, R = 0.30;   // ring sits at the visual wall, not inside the scoop
+for (let i = 0; i < SEG; i++) {
+  const a = (i / SEG) * Math.PI * 2;
+  const shape = new CANNON.Box(new CANNON.Vec3(0.075, 0.18, 0.04));
+  const off = new CANNON.Vec3(Math.cos(a) * R, 0.17, Math.sin(a) * R);
+  const q = new CANNON.Quaternion();
+  const qy = new CANNON.Quaternion().setFromEuler(0, -a + Math.PI / 2, 0);
+  const qt = new CANNON.Quaternion().setFromEuler(0.30, 0, 0);   // flare outward
+  qy.mult(qt, q);
+  bowlBody.addShape(shape, off, q);
+}
+bowlBody.addShape(new CANNON.Cylinder(0.20, 0.14, 0.08, 12), new CANNON.Vec3(0, 0.06, 0));
+bowlBody.position.set(OX, TABLE_Y, -0.30);
+world.addBody(bowlBody);
+
+// ---------- load the clay ----------
+const draco = new DRACOLoader().setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+const loader = new GLTFLoader().setDRACOLoader(draco);
+
+const dynamicItems = [];   // { mesh/group, body }
+let melonGroup = null;
+const pipMeshes = [];
+
+loader.load('assets/fruta.glb', (gltf) => {
+  const root = gltf.scene;
+  const byName = {};
+  root.traverse(o => { if (o.isMesh) byName[o.name] = o; });
+
+  // static scenery: wall, banner, table, letters, bowl
+  for (const n of ['Fruta_wall', 'Fruta_banner', 'Fruta_table', 'Fruta_text', 'Fruta_bowl']) {
+    const mesh = byName[n];
+    if (!mesh) continue;
+    mesh.material = paintMat(PALETTE[n], n === 'Fruta_wall' ? 3.2 : 1.6);
+    mesh.receiveShadow = true;
+    mesh.castShadow = (n === 'Fruta_text' || n === 'Fruta_bowl');
+    scene.attach(mesh);
+  }
+
+  // orange -> dynamic sphere
+  const orange = byName['Fruta_orange'];
+  orange.material = paintMat(PALETTE.Fruta_orange);
+  orange.castShadow = orange.receiveShadow = true;
+  scene.attach(orange);
+  addDynamic(orange, new CANNON.Sphere(0.11), 0.4);
+
+  // bananas -> dynamic boxes; banana 0 wears the baked painted texture (quality sample)
+  const bakedBanana = new THREE.TextureLoader().load('assets/banana_paint.png');
+  bakedBanana.colorSpace = THREE.SRGBColorSpace;
+  bakedBanana.flipY = false;   // glTF UV convention
+  for (let i = 0; i < 3; i++) {
+    const b = byName[`Fruta_banana_${i}`];
+    b.material = i === 0
+      ? new THREE.MeshToonMaterial({ color: 0xffffff, gradientMap, map: bakedBanana })
+      : paintMat(PALETTE.banana);
+    b.castShadow = b.receiveShadow = true;
+    scene.attach(b);
+    addDynamic(b, new CANNON.Box(new CANNON.Vec3(0.13, 0.27, 0.05)), 0.25);
+  }
+
+  // melon: three layers + seeds ride as one body
+  melonGroup = new THREE.Group();
+  scene.add(melonGroup);
+  const melonMeshes = ['Melon_rind', 'Melon_cream', 'Melon_flesh',
+    ...Object.keys(byName).filter(n => n.startsWith('Melon_seed'))];
+  // group origin = flesh centroid
+  const centre = new THREE.Vector3();
+  new THREE.Box3().setFromObject(byName['Melon_flesh']).getCenter(centre);
+  melonGroup.position.copy(centre);
+  for (const n of melonMeshes) {
+    const mesh = byName[n];
+    mesh.material = paintMat(n.startsWith('Melon_seed') ? PALETTE.seed : PALETTE[n]);
+    mesh.castShadow = mesh.receiveShadow = true;
+    melonGroup.attach(mesh);
+    if (n.startsWith('Melon_seed')) {
+      // oversized invisible hit-sphere so pips are tappable
+      const hit = new THREE.Mesh(new THREE.SphereGeometry(0.045),
+        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
+      mesh.getWorldPosition(hit.position);
+      melonGroup.attach(hit);
+      hit.userData.page = PIP_PAGES[pipMeshes.length % PIP_PAGES.length];
+      hit.userData.pip = mesh;
+      pipMeshes.push(hit);
+    }
+  }
+  addDynamic(melonGroup, new CANNON.Box(new CANNON.Vec3(0.24, 0.16, 0.07)), 0.8);
+
+  // warm-settle: let everything find its resting pose before first frame
+  for (const { body } of dynamicItems) body.position.y += 0.04;
+  for (let i = 0; i < 120; i++) world.step(1 / 60);
+  animate();
+}, undefined, (e) => console.error('[fruta] load failed', e));
+
+function addDynamic(obj3d, shape, mass) {
+  const body = new CANNON.Body({ mass, shape });
+  body.position.copy(obj3d.position);
+  body.quaternion.copy(obj3d.quaternion);
+  body.linearDamping = 0.25;
+  body.angularDamping = 0.4;
+  world.addBody(body);
+  dynamicItems.push({ obj: obj3d, body });
+}
+
+// ---------- drag interaction ----------
+const ray = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let grabbed = null, grabDepth = 0, moved = 0, downAt = null;
+
+function setPointer(e) {
+  const r = renderer.domElement.getBoundingClientRect();
+  pointer.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+  pointer.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+}
+
+addEventListener('pointerdown', (e) => {
+  if (document.getElementById('page').style.display === 'flex') {
+    document.getElementById('page').style.display = 'none';
+    return;
+  }
+  setPointer(e); moved = 0; downAt = { x: e.clientX, y: e.clientY };
+  ray.setFromCamera(pointer, camera);
+
+  const grabbables = dynamicItems.map(d => d.obj);
+  const hits = ray.intersectObjects(grabbables, true);
+  if (hits.length) {
+    let obj = hits[0].object;
+    while (obj.parent && !dynamicItems.some(d => d.obj === obj)) obj = obj.parent;
+    grabbed = dynamicItems.find(d => d.obj === obj);
+    if (grabbed) {
+      grabbed.body.type = CANNON.Body.KINEMATIC;
+      grabbed.body.velocity.setZero();
+      grabbed.body.angularVelocity.setZero();
+      grabDepth = hits[0].point.z;
+    }
+  }
+});
+
+addEventListener('pointermove', (e) => {
+  if (downAt) moved = Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y);
+  if (!grabbed) return;
+  setPointer(e);
+  ray.setFromCamera(pointer, camera);
+  // drag on the plane z = grabDepth
+  const t = (grabDepth - ray.ray.origin.z) / ray.ray.direction.z;
+  const p = ray.ray.origin.clone().addScaledVector(ray.ray.direction, t);
+  const target = new CANNON.Vec3(p.x, Math.max(p.y, TABLE_Y + 0.05), grabDepth);
+  // kinematic velocity toward target = natural throwing
+  const cur = grabbed.body.position;
+  grabbed.body.velocity.set((target.x - cur.x) * 18, (target.y - cur.y) * 18, (target.z - cur.z) * 18);
+});
+
+addEventListener('pointerup', (e) => {
+  if (grabbed) {
+    grabbed.body.type = CANNON.Body.DYNAMIC;
+    grabbed.body.velocity.scale(0.35, grabbed.body.velocity);
+    grabbed = null;
+  }
+  // click (not drag) on a pip -> open page
+  if (moved < 6) {
+    setPointer(e);
+    ray.setFromCamera(pointer, camera);
+    const hit = ray.intersectObjects(pipMeshes, false)[0];
+    if (hit) {
+      document.getElementById('page-title').textContent = hit.object.userData.page;
+      document.getElementById('page').style.display = 'flex';
+    }
+  }
+  downAt = null;
+});
+
+// pip hover cursor
+addEventListener('pointermove', (e) => {
+  if (grabbed) { document.body.style.cursor = 'grabbing'; return; }
+  setPointer(e);
+  ray.setFromCamera(pointer, camera);
+  if (ray.intersectObjects(pipMeshes, false).length) document.body.style.cursor = 'pointer';
+  else if (ray.intersectObjects(dynamicItems.map(d => d.obj), true).length) document.body.style.cursor = 'grab';
+  else document.body.style.cursor = 'default';
+});
+
+// ---------- loop ----------
+const clock = new THREE.Clock();
+function animate() {
+  requestAnimationFrame(animate);
+  world.step(1 / 60, Math.min(clock.getDelta(), 0.05), 3);
+  for (const { obj, body } of dynamicItems) {
+    obj.position.copy(body.position);
+    obj.quaternion.copy(body.quaternion);
+  }
+  renderer.render(scene, camera);
+}
+
+function resize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+resize();
+</script>
+</body>
+</html>

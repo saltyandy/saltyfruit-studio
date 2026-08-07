@@ -1,0 +1,123 @@
+/*
+ * Island stylesheet. Tailwind theme + utilities only — no preflight, so
+ * loading this on the static case-study page cannot restyle the site.
+ * The handful of preflight rules the components rely on are scoped under
+ * #lab-live-root instead.
+ */
+/* Utilities are imported WITHOUT a layer on purpose: the site's own
+   stylesheet has an un-layered `* { padding: 0 }` reset, and un-layered
+   author CSS beats anything inside a cascade layer. Un-layered, the
+   utilities win on plain specificity instead. */
+@import "tailwindcss/theme" layer(theme);
+@import "tailwindcss/utilities";
+
+@theme {
+  --font-sans: "Geist", "Inter", -apple-system, "Helvetica Neue", sans-serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", "Andale Mono", monospace;
+}
+
+/* ---- scoped stand-in for preflight ----------------------------------
+   Zero specificity via :where(), so any utility or component class
+   overrides these — but they still beat the site's `*` reset because
+   this sheet loads later. */
+
+:where(#lab-live-root, #lab-live-root *) {
+  box-sizing: border-box;
+}
+:where(#lab-live-root) {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+:where(#lab-live-root p) {
+  margin: 0;
+}
+:where(#lab-live-root button) {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+}
+:where(#lab-live-root svg) {
+  display: block;
+}
+
+/* ---- the tile ------------------------------------------------------- */
+
+.lab-live-frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.lab-live-frame > video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.lab-live-stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: top left;
+}
+
+/* the reader's pointer and its click ripples, in stage coordinates */
+.lab-live-cursor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 60;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 5px rgba(10, 14, 20, 0.35));
+}
+.lab-live-ripples {
+  position: absolute;
+  inset: 0;
+  z-index: 59;
+  pointer-events: none;
+}
+.lab-live-ripple {
+  position: absolute;
+  translate: -50% -50%;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  opacity: 0;
+}
+
+/* ---- pieces of the app's index.css the components use --------------- */
+
+.btn-obsidian {
+  cursor: pointer;
+  border-radius: 999px;
+  border: none;
+  color: rgba(255, 255, 255, 0.95);
+  background: #101218;
+  box-shadow: 0 6px 20px rgba(10, 12, 20, 0.22);
+  transition:
+    background 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+.btn-obsidian:hover {
+  background: #1d2029;
+  box-shadow: 0 8px 24px rgba(10, 12, 20, 0.28);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.rise {
+  animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}

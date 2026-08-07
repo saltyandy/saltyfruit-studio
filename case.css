@@ -285,7 +285,8 @@ body.menu-open .menu-panel {
   overflow: hidden;
 }
 
-.media video {
+.media video,
+.media > img {
   display: block;
   width: 100%;
   height: 100%;
@@ -687,4 +688,46 @@ body.dark .wordmark:hover {
   .menu-primary {
     margin-top: 72px;
   }
+}
+
+/* ---------- golf guru live demo (slot 05) ---------- */
+
+/* Fixed 900×1125 iframe scaled to the slot width so the app keeps its
+   desktop phone frame instead of collapsing to the mobile full-bleed
+   layout at tile sizes (see site.js). */
+.gg-phone {
+  background: #060f11;
+}
+
+.gg-phone iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 900px;
+  height: 1125px;
+  border: 0;
+  transform-origin: 0 0;
+  transform: scale(var(--gg-scale, 1));
+}
+
+/* ---------- nuvolari build screens (slot 05) ---------- */
+
+/* Single 1:1 design-system board (two halves baked into the image). */
+.ds-screens {
+  background: #cfd4e2;
+}
+
+.ds-screens img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Full-width V1 screen still (16:9). */
+.v1-screen img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }

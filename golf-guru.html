@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Golf Guru — Salty Fruit Studio</title>
+  <meta name="description" content="Golf Guru case study — brand identity, app design, and a living design system for golf psychology in your pocket." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="case.css" />
+</head>
+<body>
+
+  <header class="site-header case-header">
+    <a class="wordmark" href="index.html">Salty&nbsp;Fruit</a>
+    <button class="menu-toggle" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </header>
+
+  <main class="case">
+
+    <!-- 01 · hero: drone splash film — putting green + guru lockup -->
+    <div class="media case-hero">
+      <video src="assets/golf-guru/splash.mp4" poster="assets/golf-guru/header.jpg" autoplay muted loop playsinline preload="metadata"></video>
+    </div>
+
+    <section class="case-caption">
+      <p class="case-kicker">GOLF GURU™</p>
+      <h1 class="case-title">Golf Psychology in Your Pocket</h1>
+      <button class="read-more">Read more +</button>
+    </section>
+
+    <section class="case-media">
+      <div class="duo">
+        <!-- 02/03 · brand intro poster + animated guru mark -->
+        <div class="media r-4x5">
+          <img src="assets/golf-guru/brand-intro.jpg" alt="Golf Psychology in your pocket — Golf Guru brand poster in Guru Green and Sand Trap cream" />
+        </div>
+        <div class="media r-4x5">
+          <img src="assets/golf-guru/brand-mark.gif" alt="The levitating guru brand mark, animated on the Twilight 9th ground" />
+        </div>
+      </div>
+
+      <!-- 04 · full design-system overview board -->
+      <div class="media r-16x9">
+        <img src="assets/golf-guru/design-system.jpg" alt="Golf Guru design system overview — buttons, call-out cards, forms, type scale, dials and score charts" />
+      </div>
+
+      <div class="duo">
+        <!-- 05 · the live artifact: the rebuilt app running in its phone frame.
+             Fixed 900×1125 iframe scaled to the slot (see site.js) so the
+             desktop frame never collapses to the mobile full-bleed layout. -->
+        <div class="media r-4x5 gg-phone">
+          <iframe src="golf-guru/dist/index.html" title="Golf Guru app — live interactive demo" loading="lazy"></iframe>
+        </div>
+        <!-- 06 · evolution cut: scrubbing the app from V1 to PROD 1.0 -->
+        <div class="media r-4x5">
+          <video src="assets/golf-guru/evolution.mp4" autoplay muted loop playsinline preload="metadata"></video>
+        </div>
+      </div>
+
+      <div class="duo">
+        <!-- 07/08 · palette over course photography + embossed print -->
+        <div class="media r-4x5">
+          <img src="assets/golf-guru/palette.jpg" alt="Brand palette — Lake Ball, Sand Trap, Dorian Cup and Fairway Green over dusk course photography" />
+        </div>
+        <div class="media r-4x5">
+          <img src="assets/golf-guru/business-cards.jpg" alt="Embossed Guru Green business cards, mark on one face and QR on the other" />
+        </div>
+      </div>
+
+      <!-- 09 · closing: the out-of-home line -->
+      <div class="media r-16x9">
+        <img src="assets/golf-guru/billboard.jpg" alt="Rooftop billboard in Guru Green reading “It’s not your swing.”" />
+      </div>
+    </section>
+
+    <section class="more-work">
+      <p class="section-label">View more work</p>
+      <div class="more-work-row">
+        <a class="more-card" href="project.html">
+          <div class="ph"><p class="ph-label">Thumbnail</p></div>
+          <div class="more-card-meta">
+            <span class="more-card-name">The Orb · Nuvolari</span>
+            <span class="more-card-index">01/03</span>
+          </div>
+        </a>
+        <a class="more-card" href="getvocal.html">
+          <div class="ph"><p class="ph-label">Thumbnail</p></div>
+          <div class="more-card-meta">
+            <span class="more-card-name">GetVocal V3</span>
+            <span class="more-card-index">02/03</span>
+          </div>
+        </a>
+        <a class="more-card" href="index.html#work">
+          <div class="ph"><p class="ph-label">All work</p></div>
+          <div class="more-card-meta">
+            <span class="more-card-name">All Work</span>
+            <span class="more-card-index">→</span>
+          </div>
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <a class="footer-email" href="mailto:hello@saltyfruit.studio">hello@saltyfruit.studio</a>
+    <p class="footer-fine">© 2026 Salty Fruit Studio</p>
+  </footer>
+
+  <!-- takeover sheet -->
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Golf Guru case study details">
+    <div class="sheet-inner">
+      <button class="sheet-close">← Back to Case Study</button>
+
+      <div class="sheet-grid">
+        <aside class="sheet-info">
+          <p class="info-label">INFO</p>
+          <ul>
+            <li>Brand Identity</li>
+            <li>App Design</li>
+            <li>Design Systems</li>
+            <li>Motion</li>
+            <li>Front-end Development</li>
+          </ul>
+
+          <p class="info-note">The mental game, finally treated like part of the game.</p>
+
+          <hr class="info-divider" />
+
+          <ul class="info-credits">
+            <li><span>Design &amp; Build:</span> Andy</li>
+          </ul>
+
+          <a class="info-download" href="golf-guru/dist/index.html" target="_blank" rel="noopener">LAUNCH THE LIVE APP DEMO ↗</a>
+        </aside>
+
+        <article class="sheet-body">
+          <h1>Golf Guru™</h1>
+
+          <p>A golf psychology coach that lives in your pocket — brand, product, and design system built as one continuous piece of work.</p>
+
+          <p>Golf is played on a six-inch course: the space between your ears. Golf Guru packages sports psychology into audio sessions, mental-game scoring, and pre-round routines for everyday golfers. The brief covered the whole surface — a brand that could sit calmly next to the game's old institutions, and an app that makes working on your head feel as normal as working on your swing.</p>
+
+          <h2>THE BRAND</h2>
+
+          <p>The identity starts with the levitating guru: a meditating figure crossed with golf clubs, floating above the ring of a cup. Guru Green does the heavy lifting, supported by Lake Ball teal, Sand Trap cream, and the near-black Twilight 9th — a palette pulled from dusk on a links course rather than a leaderboard. The voice keeps the same calm confidence; the out-of-home line simply says, "It's not your swing."</p>
+
+          <h2>THE APP</h2>
+
+          <p>The product organizes a golfer's week around a practice wheel — Prepare, Practice, Play, Pre-Round, Post-Round — with audio sessions from the guru, reflections, and a mental-game score tracked round over round. A full design system carries it: golden-ratio type scale, dials and score charts, call-out cards, and the tracking components that turn soft psychology into hard numbers.</p>
+
+          <h2>THE REBUILD</h2>
+
+          <p>In 2026 the app was rebuilt as a working React prototype for this portfolio — three complete flows running in a phone frame you can actually use. The tile in this case study isn't a mockup; it's the product, live. Scroll the wheel, play a session, score a round.</p>
+        </article>
+      </div>
+    </div>
+  </div>
+
+  <!-- menu -->
+  <div class="menu-backdrop"></div>
+  <aside class="menu-panel" role="dialog" aria-modal="true" aria-label="Menu">
+    <button class="menu-close" aria-label="Close menu">✕</button>
+
+    <ul class="menu-primary">
+      <li><a href="index.html#work">Work</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="index.html">Home</a></li>
+    </ul>
+
+    <ul class="menu-secondary">
+      <li><a href="mailto:hello@saltyfruit.studio?subject=New%20project">Start a Project</a></li>
+      <li><a href="mailto:hello@saltyfruit.studio">Contact</a></li>
+    </ul>
+
+    <div class="menu-foot">
+      <div class="menu-socials">
+        <a href="#" aria-label="Instagram">IG</a>
+        <a href="#" aria-label="LinkedIn">IN</a>
+      </div>
+      <p class="menu-copy">© 2026 Salty Fruit Studio</p>
+    </div>
+  </aside>
+
+  <script src="site.js"></script>
+</body>
+</html>

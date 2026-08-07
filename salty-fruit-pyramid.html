@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Salty Fruit — Falling Fruit Prototype</title>
+<style>
+  html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; background: #16121f; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+  #scene { position: fixed; inset: 0; display: block; }
+  #hint {
+    position: fixed; top: 32px; left: 0; right: 0; text-align: center;
+    color: #f5eede; font-size: 15px; letter-spacing: 0.14em; text-transform: uppercase;
+    opacity: 0.85; pointer-events: none; transition: opacity 0.6s;
+  }
+  #brand {
+    position: fixed; top: 28px; left: 36px; color: #f5eede; font-weight: 700;
+    font-size: 20px; letter-spacing: 0.02em; pointer-events: none;
+  }
+  #brand span { color: #ffb03a; }
+  #label {
+    position: fixed; padding: 8px 14px; background: rgba(22,18,31,0.92); color: #f5eede;
+    border: 1px solid rgba(255,176,58,0.5); border-radius: 20px; font-size: 13px;
+    letter-spacing: 0.08em; pointer-events: none; opacity: 0; transition: opacity 0.15s;
+    transform: translate(-50%, -140%); white-space: nowrap;
+  }
+  #overlay {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(12,9,18,0.72); backdrop-filter: blur(6px);
+    opacity: 0; pointer-events: none; transition: opacity 0.35s;
+  }
+  #overlay.open { opacity: 1; pointer-events: auto; }
+  #card {
+    width: min(560px, 86vw); background: #f5eede; border-radius: 18px; padding: 40px 44px;
+    color: #16121f; transform: translateY(16px); transition: transform 0.35s;
+  }
+  #overlay.open #card { transform: translateY(0); }
+  #card .kicker { font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase; color: #b0552b; margin-bottom: 10px; }
+  #card h2 { margin: 0 0 14px; font-size: 32px; line-height: 1.1; }
+  #card p { margin: 0 0 24px; line-height: 1.55; font-size: 15px; color: #4a4352; }
+  #card .swatch { display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin-right: 8px; vertical-align: -2px; }
+  #card button {
+    background: #16121f; color: #f5eede; border: none; padding: 12px 26px; border-radius: 24px;
+    font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+  }
+  #restack {
+    position: fixed; bottom: 26px; right: 30px; background: transparent; color: rgba(245,238,222,0.55);
+    border: 1px solid rgba(245,238,222,0.28); padding: 9px 18px; border-radius: 20px;
+    font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer;
+    opacity: 0; transition: opacity 0.5s;
+  }
+  #restack:hover { color: #f5eede; border-color: #f5eede; }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="brand">SALTY<span>FRUIT</span></div>
+<div id="hint">Click the pyramid</div>
+<div id="label"></div>
+<button id="restack">Restack</button>
+<div id="overlay">
+  <div id="card">
+    <div class="kicker">Case Study</div>
+    <h2 id="card-title"></h2>
+    <p id="card-desc"></p>
+    <button id="card-close">Back to the fruit</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ============================================================
+   Salty Fruit — falling fruit pyramid prototype
+   Stack of fruit → click → physics collapse → fruit settles
+   into a project row → hover to see names, click to open.
+   Physics is a small custom sphere solver (no deps).
+   ============================================================ */
+
+const PROJECTS = [
+  { name: 'Neon Grove',      fruit: 'Orange',     desc: 'Brand identity and motion system for a late-night streaming label. Loud, warm, unapologetically citrus.' },
+  { name: 'Tidal Type',      fruit: 'Lime',       desc: 'A variable typeface that responds to scroll velocity. Commissioned for a coastal music festival.' },
+  { name: 'Pulp Radio',      fruit: 'Lemon',      desc: 'Interactive audio player and visual identity for an independent broadcaster. Every show gets its own squeeze.' },
+  { name: 'Stone & Skin',    fruit: 'Plum',       desc: 'Packaging and art direction for a natural skincare line. Matte, deep, quietly luxurious.' },
+  { name: 'Half Peel',       fruit: 'Peach',      desc: 'E-commerce experience for a vintage clothing collective. Soft gradients, hard bargains.' },
+  { name: 'Juice Protocol',  fruit: 'Watermelon', desc: 'Data-viz toolkit turning dry dashboards into something you actually want to look at.' },
+  { name: 'Rind',            fruit: 'Grapefruit', desc: 'Editorial design for a quarterly print magazine about bitterness, in food and in life.' },
+  { name: 'Seed Money',      fruit: 'Apple',      desc: 'Pitch-deck design system for early-stage founders. One template, a thousand orchards.' },
+  { name: 'Zest OS',         fruit: 'Tangerine',  desc: 'A playful onboarding flow for a productivity app that refuses to feel like work.' },
+  { name: 'Cold Press',      fruit: 'Kiwi',       desc: 'Motion campaign for a juice brand launch — 14 spots, one very tired blender.' },
+  { name: 'Sour Hours',      fruit: 'Cherry',     desc: 'Nightlife brand and poster series. Small fruit, big evenings.' },
+  { name: 'The Grove Index', fruit: 'Avocado',    desc: 'Web platform cataloguing heritage fruit varieties. Research-heavy, lovingly illustrated.' },
+  { name: 'Peel Sessions',   fruit: 'Banana-ish', desc: 'Visual identity for a live-recorded podcast. Yes, the name is a music joke.' },
+  { name: 'Salt Rim',        fruit: 'Mango',      desc: 'Cocktail-bar identity where every menu is a tiny zine. The salt is the point.' },
+];
+
+const FRUIT_STYLES = [
+  { color: 0xff8c1a, r: 1.00 }, // orange
+  { color: 0x9acd32, r: 0.82 }, // lime
+  { color: 0xffd23f, r: 0.92 }, // lemon
+  { color: 0x6a3fa0, r: 0.88 }, // plum
+  { color: 0xffab76, r: 0.98 }, // peach
+  { color: 0x2e9e5b, r: 1.12 }, // watermelon (small one)
+  { color: 0xff6f61, r: 1.02 }, // grapefruit
+  { color: 0xd7263d, r: 0.95 }, // apple
+  { color: 0xff9f1c, r: 0.85 }, // tangerine
+  { color: 0x7a9a3b, r: 0.80 }, // kiwi
+  { color: 0xa4123f, r: 0.62 }, // cherry
+  { color: 0x3e5622, r: 0.90 }, // avocado
+  { color: 0xffe066, r: 0.90 }, // banana-ish
+  { color: 0xffb03a, r: 1.00 }, // mango
+];
+
+// ---------- renderer / scene ----------
+const canvas = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x16121f);
+scene.fog = new THREE.Fog(0x16121f, 30, 60);
+
+const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+camera.position.set(0, 7.5, 20);
+camera.lookAt(0, 3.4, 0);
+
+const keyLight = new THREE.DirectionalLight(0xfff2dc, 1.15);
+keyLight.position.set(6, 12, 8);
+keyLight.castShadow = true;
+keyLight.shadow.mapSize.set(2048, 2048);
+keyLight.shadow.camera.left = -14; keyLight.shadow.camera.right = 14;
+keyLight.shadow.camera.top = 14; keyLight.shadow.camera.bottom = -14;
+scene.add(keyLight);
+scene.add(new THREE.AmbientLight(0x8877aa, 0.55));
+const rim = new THREE.DirectionalLight(0x6a5aff, 0.4);
+rim.position.set(-8, 6, -6);
+scene.add(rim);
+
+const ground = new THREE.Mesh(
+  new THREE.CircleGeometry(40, 48),
+  new THREE.MeshStandardMaterial({ color: 0x221b30, roughness: 0.95 })
+);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// subtle plinth under the pyramid
+const plinth = new THREE.Mesh(
+  new THREE.CylinderGeometry(4.6, 5.0, 0.5, 40),
+  new THREE.MeshStandardMaterial({ color: 0x2c2340, roughness: 0.8 })
+);
+plinth.position.y = 0.25;
+plinth.receiveShadow = true; plinth.castShadow = true;
+scene.add(plinth);
+
+// ---------- fruit bodies ----------
+const GRAVITY = -22;
+const FLOOR_Y = 0.5;           // top of plinth region; floor outside plinth is 0
+const REST = 0.35;             // restitution
+const FRICTION = 0.985;
+const fruits = [];
+
+function makeFruit(i) {
+  const style = FRUIT_STYLES[i % FRUIT_STYLES.length];
+  const geo = new THREE.SphereGeometry(style.r, 28, 22);
+  const mat = new THREE.MeshStandardMaterial({
+    color: style.color, roughness: 0.45, metalness: 0.02,
+    emissive: style.color, emissiveIntensity: 0.0
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.castShadow = true; mesh.receiveShadow = true;
+  // tiny stem
+  const stem = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.05, 0.07, 0.32, 8),
+    new THREE.MeshStandardMaterial({ color: 0x5b4a2f, roughness: 0.9 })
+  );
+  stem.position.y = style.r + 0.12;
+  mesh.add(stem);
+  scene.add(mesh);
+  return {
+    mesh, r: style.r, project: PROJECTS[i % PROJECTS.length],
+    pos: new THREE.Vector3(), vel: new THREE.Vector3(),
+    spin: new THREE.Vector3(), frozen: true, slot: null, baseColor: style.color
+  };
+}
+
+// square pyramid: 3x3 + 2x2 + 1 = 14
+const LAYERS = [3, 2, 1];
+function stackPositions() {
+  const out = [];
+  let y = FLOOR_Y;
+  const spacing = 2.15;
+  LAYERS.forEach((n, li) => {
+    const layerR = 1.0; // treat as uniform for stacking
+    const cy = y + layerR;
+    const off = (n - 1) / 2;
+    for (let ix = 0; ix < n; ix++) for (let iz = 0; iz < n; iz++) {
+      out.push(new THREE.Vector3((ix - off) * spacing, cy, (iz - off) * spacing));
+    }
+    y = cy + layerR * 0.75; // layers nest a bit
+  });
+  return out;
+}
+
+const stackPos = stackPositions(); // 9 + 4 + 1 = 14
+for (let i = 0; i < stackPos.length; i++) fruits.push(makeFruit(i));
+
+let state = 'stacked'; // stacked | falling | menu
+let settleTimer = 0;
+let fallStart = 0;
+
+function placeStack() {
+  const jitter = 0.06;
+  fruits.forEach((f, i) => {
+    f.pos.copy(stackPos[i]);
+    f.pos.x += (Math.random() - 0.5) * jitter;
+    f.pos.z += (Math.random() - 0.5) * jitter;
+    f.vel.set(0, 0, 0);
+    f.spin.set(0, 0, 0);
+    f.frozen = true;
+    f.slot = null;
+    f.mesh.position.copy(f.pos);
+    f.mesh.rotation.set(0, Math.random() * Math.PI * 2, 0);
+    f.mesh.material.emissiveIntensity = 0;
+    f.mesh.scale.setScalar(1);
+  });
+  state = 'stacked';
+  hint.style.opacity = 0.85;
+  hint.textContent = 'Click the pyramid';
+  restackBtn.style.opacity = 0;
+}
+
+// ---------- physics ----------
+function stepPhysics(dt) {
+  for (const f of fruits) {
+    if (f.frozen) continue;
+    f.vel.y += GRAVITY * dt;
+    f.pos.addScaledVector(f.vel, dt);
+
+    // floor: plinth top inside radius 4.6, ground outside
+    const onPlinth = Math.hypot(f.pos.x, f.pos.z) < 4.6;
+    const floor = onPlinth ? FLOOR_Y : 0;
+    if (f.pos.y - f.r < floor) {
+      f.pos.y = floor + f.r;
+      if (f.vel.y < 0) f.vel.y = -f.vel.y * REST;
+      f.vel.x *= FRICTION; f.vel.z *= FRICTION;
+      if (Math.abs(f.vel.y) < 0.6) f.vel.y = 0;
+    }
+    // rolling resistance so fruit doesn't drift forever
+    if (f.pos.y - f.r <= floor + 0.05) {
+      const damp = Math.max(0, 1 - 1.6 * dt);
+      f.vel.x *= damp; f.vel.z *= damp;
+    }
+    // soft walls so nothing rolls off screen
+    const LIM_X = 8.5, LIM_Z_NEAR = 4.5, LIM_Z_FAR = -7;
+    if (f.pos.x >  LIM_X - f.r) { f.pos.x =  LIM_X - f.r; f.vel.x = -Math.abs(f.vel.x) * REST; }
+    if (f.pos.x < -LIM_X + f.r) { f.pos.x = -LIM_X + f.r; f.vel.x =  Math.abs(f.vel.x) * REST; }
+    if (f.pos.z >  LIM_Z_NEAR - f.r) { f.pos.z = LIM_Z_NEAR - f.r; f.vel.z = -Math.abs(f.vel.z) * REST; }
+    if (f.pos.z <  LIM_Z_FAR + f.r)  { f.pos.z = LIM_Z_FAR + f.r;  f.vel.z =  Math.abs(f.vel.z) * REST; }
+  }
+  // sphere-sphere collisions (a few relaxation passes)
+  for (let pass = 0; pass < 3; pass++) {
+    for (let i = 0; i < fruits.length; i++) {
+      for (let j = i + 1; j < fruits.length; j++) {
+        const a = fruits[i], b = fruits[j];
+        if (a.frozen && b.frozen) continue;
+        const d = new THREE.Vector3().subVectors(b.pos, a.pos);
+        const dist = d.length() || 0.0001;
+        const min = a.r + b.r;
+        if (dist < min) {
+          d.divideScalar(dist);
+          const overlap = min - dist;
+          if (!a.frozen && !b.frozen) {
+            a.pos.addScaledVector(d, -overlap / 2);
+            b.pos.addScaledVector(d,  overlap / 2);
+          } else if (a.frozen) {
+            b.pos.addScaledVector(d, overlap);
+          } else {
+            a.pos.addScaledVector(d, -overlap);
+          }
+          // impulse along normal
+          const rel = new THREE.Vector3().subVectors(b.vel, a.vel);
+          const vn = rel.dot(d);
+          if (vn < 0) {
+            const imp = -vn * (1 + REST) / 2;
+            if (!a.frozen) a.vel.addScaledVector(d, -imp);
+            if (!b.frozen) b.vel.addScaledVector(d,  imp);
+          }
+        }
+      }
+    }
+  }
+  // tumbling: rotate roughly by velocity
+  for (const f of fruits) {
+    if (f.frozen) continue;
+    f.mesh.rotation.x += (f.vel.z / f.r) * dt;
+    f.mesh.rotation.z -= (f.vel.x / f.r) * dt;
+    f.mesh.position.copy(f.pos);
+  }
+}
+
+function allSettled() {
+  return fruits.every(f => f.frozen || f.vel.lengthSq() < 0.25);
+}
+
+// ---------- collapse ----------
+function collapse(hitFruit) {
+  state = 'falling';
+  hint.style.opacity = 0;
+  settleTimer = 0;
+  fallStart = performance.now();
+  fruits.forEach(f => {
+    f.frozen = false;
+    // outward burst, biased away from the clicked fruit
+    const away = new THREE.Vector3().subVectors(f.pos, hitFruit.pos);
+    away.y = 0;
+    const dist = Math.max(away.length(), 0.5);
+    away.normalize();
+    const power = 7 / dist;
+    f.vel.set(
+      away.x * power + (Math.random() - 0.5) * 2.5,
+      Math.random() * 2.0,
+      away.z * power + (Math.random() - 0.5) * 2.5 + 2.2 // bias toward camera
+    );
+  });
+  hitFruit.vel.y = 3.5;
+}
+
+// ---------- settle into menu (fruit stays where it lands) ----------
+function beginMenu() {
+  state = 'menu';
+  fruits.forEach(f => {
+    f.frozen = true;
+    f.restY = f.pos.y;
+  });
+  hint.textContent = 'Pick a fruit';
+  hint.style.opacity = 0.85;
+  restackBtn.style.opacity = 1;
+}
+
+// ---------- interaction ----------
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+const label = document.getElementById('label');
+const hint = document.getElementById('hint');
+const overlay = document.getElementById('overlay');
+const restackBtn = document.getElementById('restack');
+let hovered = null;
+
+function pick(e) {
+  pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+  pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const meshes = fruits.map(f => f.mesh);
+  const hits = raycaster.intersectObjects(meshes, false);
+  return hits.length ? fruits.find(f => f.mesh === hits[0].object) : null;
+}
+
+window.addEventListener('pointermove', e => {
+  if (state !== 'menu' && state !== 'stacked') { label.style.opacity = 0; return; }
+  const f = pick(e);
+  if (hovered && hovered !== f) {
+    hovered.mesh.material.emissiveIntensity = 0;
+    hovered.mesh.scale.setScalar(1);
+    hovered = null;
+  }
+  if (f && state === 'menu') {
+    hovered = f;
+    f.mesh.material.emissiveIntensity = 0.35;
+    f.mesh.scale.setScalar(1.18);
+    label.textContent = f.project.name;
+    label.style.left = e.clientX + 'px';
+    label.style.top = e.clientY + 'px';
+    label.style.opacity = 1;
+    document.body.style.cursor = 'pointer';
+  } else {
+    label.style.opacity = 0;
+    document.body.style.cursor = (f && state === 'stacked') ? 'pointer' : 'default';
+  }
+});
+
+window.addEventListener('pointerdown', e => {
+  if (overlay.classList.contains('open')) return;
+  if (e.target !== canvas) return;
+  const f = pick(e);
+  if (state === 'stacked') collapse(f || fruits[fruits.length - 1]); // any click knocks it down
+  else if (state === 'menu' && f) openProject(f);
+});
+
+function openProject(f) {
+  document.getElementById('card-title').textContent = f.project.name;
+  document.getElementById('card-desc').textContent = f.project.desc;
+  const kicker = document.querySelector('#card .kicker');
+  kicker.innerHTML = '<span class="swatch" style="background:#' + f.baseColor.toString(16).padStart(6, '0') + '"></span>Case Study — ' + f.project.fruit;
+  overlay.classList.add('open');
+}
+document.getElementById('card-close').addEventListener('click', () => overlay.classList.remove('open'));
+overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+restackBtn.addEventListener('click', placeStack);
+
+// ---------- camera drift ----------
+let mouseX = 0;
+window.addEventListener('pointermove', e => { mouseX = (e.clientX / window.innerWidth) * 2 - 1; });
+
+// ---------- resize ----------
+function resize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ---------- main loop ----------
+placeStack();
+let last = performance.now();
+function tick(now) {
+  requestAnimationFrame(tick);
+  let dt = Math.min((now - last) / 1000, 0.033);
+  last = now;
+
+  if (state === 'falling') {
+    stepPhysics(dt);
+    const elapsed = (now - fallStart) / 1000; // wall-clock, not frame-time
+    if ((elapsed > 1.2 && allSettled()) || elapsed > 4.5) beginMenu();
+  } else if (state === 'menu') {
+    // gentle idle breathing where each fruit landed
+    fruits.forEach((f, i) => {
+      f.mesh.position.y = f.restY + Math.sin(now / 900 + i * 1.7) * 0.05;
+    });
+  }
+
+  // subtle camera parallax
+  camera.position.x += (mouseX * 1.6 - camera.position.x) * 0.03;
+  camera.lookAt(0, state === 'menu' ? 2.2 : 3.4, 0);
+
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

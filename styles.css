@@ -159,6 +159,15 @@ a {
   letter-spacing: 0.08em;
 }
 
+/* Archive: same list language as Selected work, one register quieter. */
+.archive .project-name {
+  font-size: clamp(20px, 2.4vw, 30px);
+}
+
+.archive .project {
+  padding: 20px 0;
+}
+
 /* ---------- about ---------- */
 
 .about {

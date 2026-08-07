@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>lab-live dev harness</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    body { margin: 0; display: grid; place-items: center; min-height: 100vh; background: #111; }
+    /* stand-in for the case page's .media r-1x1 tile */
+    .tile { position: relative; width: min(80vh, 80vw); aspect-ratio: 1 / 1; border-radius: 6px; overflow: hidden; }
+  </style>
+</head>
+<body>
+  <div class="tile" id="lab-live-root" data-video="/orb-backdrop.mp4"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>

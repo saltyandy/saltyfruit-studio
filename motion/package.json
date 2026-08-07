@@ -6,7 +6,7 @@
     "studio": "npm run manifest && remotion studio",
     "manifest": "node scripts/process-manifest.mjs",
     "render:orb-notifications": "remotion render OrbNotifications ../assets/video/orb-notifications.mp4",
-    "render:orb-backdrop": "remotion render OrbBackdrop ../assets/video/orb-backdrop-raw.mp4 && ffmpeg -y -i ../assets/video/orb-backdrop-raw.mp4 -filter_complex \"[0:v]trim=start=4,setpts=PTS-STARTPTS[a];[0:v]trim=duration=4,setpts=PTS-STARTPTS[b];[a][b]xfade=transition=fade:duration=4:offset=20[v]\" -map \"[v]\" -c:v libx264 -crf 18 -pix_fmt yuv420p ../assets/video/orb-backdrop.mp4 && rm ../assets/video/orb-backdrop-raw.mp4",
+    "render:orb-backdrop": "remotion render OrbBackdrop ../assets/video/orb-backdrop-raw.mp4 && ffmpeg -y -i ../assets/video/orb-backdrop-raw.mp4 -filter_complex \"[0:v]trim=start=4,setpts=PTS-STARTPTS[a];[0:v]trim=duration=4,setpts=PTS-STARTPTS[b];[a][b]xfade=transition=fade:duration=4:offset=20[v]\" -map \"[v]\" -c:v libx264 -crf 28 -preset slow -pix_fmt yuv420p -movflags +faststart ../assets/video/orb-backdrop.mp4 && rm ../assets/video/orb-backdrop-raw.mp4",
     "render:cinema-hero": "remotion render CinemaHero ../assets/video/cinema-hero-raw.mp4 && ffmpeg -y -i ../assets/video/cinema-hero-raw.mp4 -filter_complex \"[0:v]trim=start=2,setpts=PTS-STARTPTS[a];[0:v]trim=duration=2,setpts=PTS-STARTPTS[b];[a][b]xfade=transition=fade:duration=2:offset=22[v]\" -map \"[v]\" -c:v libx264 -crf 18 -pix_fmt yuv420p ../assets/video/cinema-hero.mp4 && rm ../assets/video/cinema-hero-raw.mp4",
     "render:orb-schematic": "remotion render OrbSchematic ../assets/video/orb-schematic.mp4",
     "render:process": "npm run manifest && remotion render ProcessReel ../assets/video/process-reel.mp4",
