@@ -1,0 +1,51 @@
+/* Tailwind WITHOUT preflight — this sheet lands inside the portfolio's
+   pages, which carry their own `* { margin:0; padding:0 }` reset, and a
+   full preflight would restyle the host site. Theme + utilities only.
+   Deliberately UNLAYERED: the host reset is unlayered, and unlayered
+   styles beat layered ones regardless of specificity — in a layer,
+   `mx-auto`/`px-8` would lose to `* { margin:0 }` and the container
+   pins to the viewport edge. Unlayered, class specificity wins. */
+@import "tailwindcss/theme.css";
+@import "tailwindcss/utilities.css";
+
+/* the landing page's --font-geist-sans, self-hosted */
+@font-face {
+  font-family: "Geist";
+  src: url("./assets/Geist-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+#rings-explainer {
+  --font-geist-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* the preflight rules the scene leans on, scoped so the host site is
+   untouched: stacked scene SVGs must not sit on the inline baseline, and
+   the rings-3 chapter <button>s must inherit Geist instead of UA styles */
+#rings-explainer svg {
+  display: block;
+}
+#rings-explainer button {
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+}
+
+/* Lenis's recommended host styles. `scroll-behavior: auto` overrides the
+   portfolio's `html { scroll-behavior: smooth }`, which would fight
+   lenis.scrollTo; lenis-stopped is the chapter anchor-lock hold. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}

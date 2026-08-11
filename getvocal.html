@@ -11,6 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="case.css" />
+  <link rel="stylesheet" href="assets/getvocal/rings/rings.css" />
 </head>
 <body>
 
@@ -23,9 +24,11 @@
 
   <main class="case">
 
-    <!-- 01 · hero: screen film of the fleet canvas at Z0 — 30 agents, team glows,
-         handoff comets, cursor lens. Record gv-v3.vercel.app fleet view. -->
-    <div class="ph ph-hero case-hero"><p class="ph-label">01 · Fleet canvas film · full-width hero</p></div>
+    <!-- 01 · hero: the fleet canvas film — boot, ask, diagnose, publish, close.
+         Recorded from lab/fleet-hero (Playwright → VP9). -->
+    <div class="media case-hero">
+      <video src="assets/getvocal/hero-fleet-v2.webm" autoplay muted loop playsinline preload="metadata"></video>
+    </div>
 
     <section class="case-caption">
       <p class="case-kicker">GETVOCAL V3™</p>
@@ -41,9 +44,15 @@
         <div class="ph r-4x5"><p class="ph-label">03 · Agent node · warm-paper light · Paper export</p></div>
       </div>
 
-      <!-- 04 · the disclosure interaction: inbound pill → trigger-flow panel
-           blooms open, canvas quiets. Record gv-v3.vercel.app/#/disclose -->
-      <div class="ph r-16x9"><p class="ph-label">04 · Progressive disclosure film · trigger-flow bloom</p></div>
+      <!-- 04 · How GetVocal works — the rings animatic from the V3 landing
+           page, running live. Same component as the site (lab/rings holds
+           verbatim copies of rings-3/rings3.tsx + its rings-2 Scene), built
+           to assets/getvocal/rings. Scroll-driven console format: ring
+           build, LLM cloud, control tower, learning loop — with Lenis
+           anchor locks, exactly as deployed. Sits in the media grid like
+           any other card: rounded + clipped (overflow: clip, NOT hidden —
+           hidden would become the sticky stage's scrollport and unpin it). -->
+      <div id="rings-explainer"></div>
 
       <div class="duo">
         <!-- 05 · detail panels: the five connector panels in the dark skin —
@@ -103,7 +112,7 @@
   </footer>
 
   <!-- takeover sheet -->
-  <div class="sheet" role="dialog" aria-modal="true" aria-label="GetVocal V3 case study details">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="GetVocal V3 case study details" data-lenis-prevent>
     <div class="sheet-inner">
       <button class="sheet-close">← Back to Case Study</button>
 
@@ -154,7 +163,7 @@
 
   <!-- menu -->
   <div class="menu-backdrop"></div>
-  <aside class="menu-panel" role="dialog" aria-modal="true" aria-label="Menu">
+  <aside class="menu-panel" role="dialog" aria-modal="true" aria-label="Menu" data-lenis-prevent>
     <button class="menu-close" aria-label="Close menu">✕</button>
 
     <ul class="menu-primary">
@@ -178,5 +187,6 @@
   </aside>
 
   <script src="site.js"></script>
+  <script type="module" src="assets/getvocal/rings/rings.js"></script>
 </body>
 </html>

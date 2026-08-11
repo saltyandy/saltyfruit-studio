@@ -199,6 +199,12 @@ body.menu-open .menu-panel {
   border-radius: 0;
 }
 
+/* full-frame film hero — never crop the chrome out of a screen recording */
+.case-hero.hero-16x9 {
+  height: auto;
+  aspect-ratio: 16 / 9;
+}
+
 .case-caption {
   padding: 56px var(--space-gutter) 64px;
 }
@@ -297,6 +303,17 @@ body.menu-open .menu-panel {
 .r-21x9 { aspect-ratio: 21 / 9; }
 .r-4x5  { aspect-ratio: 4 / 5; }
 .r-1x1  { aspect-ratio: 1 / 1; }
+
+/* ---------- rings explainer — live V3 landing section (slot 04) ----------
+   A ~4-viewport scroll-driven scene living in the media grid like any
+   other card. overflow: clip (not hidden) rounds the corners without
+   becoming a scroll container — hidden would re-anchor the component's
+   position: sticky stage to this box and the pin would never engage. */
+
+#rings-explainer {
+  border-radius: 10px;
+  overflow: clip;
+}
 
 /* ---------- orb session-flow diagram (slot 01) ---------- */
 

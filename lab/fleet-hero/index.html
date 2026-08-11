@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GetVocal V3 — Fleet (hero build)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #07080D;
+    --chrome-bg: rgb(12 14 22 / 92%);
+    --card-bg: #101627;
+    --surface1: rgb(255 255 255 / 4%);
+    --surface2: rgb(255 255 255 / 7.5%);
+    --surface3: rgb(255 255 255 / 12%);
+    --border: #2E3650;
+    --border2: #3A465F;
+    --border3: #4A5878;
+    --text: #F5F6FA;
+    --text2: rgb(255 255 255 / 72%);
+    --text3: rgb(255 255 255 / 44%);
+    --text4: rgb(255 255 255 / 22%);
+    --green: #4AA8A8;
+    --amber: #E8B558;
+    --red-hot: #EF4444;
+    --violet: #8B7FE0;
+    --mode-manage: #A78BFA;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #000; overflow: hidden; }
+  body { font-family: 'Geist', system-ui, sans-serif; }
+
+  /* fixed 1920x1080 stage, scaled to fit the window */
+  #stage {
+    position: absolute; left: 50%; top: 50%;
+    width: 1920px; height: 1080px;
+    transform-origin: center center;
+    background: var(--bg);
+    overflow: hidden;
+  }
+  #shader-root, #shader-root > * { position: absolute; inset: 0; }
+  #shader-root { opacity: 0.7; }
+  #dots {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(rgb(255 255 255 / 5%) 1px, transparent 1.2px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+  #fxw { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; }
+
+  /* ── boot overlay ───────────────────────── */
+  #boot {
+    position: absolute; inset: 0; z-index: 10; background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+    transition: opacity .45s ease;
+  }
+  #boot.hide { opacity: 0; pointer-events: none; }
+  .bootbox {
+    display: flex; align-items: center; gap: 9px; padding: 9px 18px;
+    border-radius: 999px; background: var(--chrome-bg); border: 1px solid var(--border);
+    font-size: 11px; color: var(--text2);
+  }
+  .bootdot { width: 6px; height: 6px; border-radius: 50%; background: var(--violet); animation: bpulse 1s ease-in-out infinite; }
+  .bootline { width: 168px; height: 2px; border-radius: 999px; background: var(--surface2); overflow: hidden; }
+  .bootline i { display: block; height: 100%; width: 0; border-radius: 999px; background: var(--violet); transition: width .72s cubic-bezier(.4, 0, .2, 1); }
+  @keyframes bpulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  /* ── chrome ─────────────────────────────── */
+  .chrome-btn {
+    position: absolute; width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--chrome-bg); border: 1px solid var(--border); border-radius: 999px;
+    color: var(--text3); backdrop-filter: blur(24px); cursor: pointer;
+  }
+  #app-menu { left: 100px; top: 100px; }
+  #breadcrumb {
+    position: absolute; left: 176px; top: 100px; height: 36px;
+    display: flex; align-items: center; padding: 0 16px;
+    background: var(--chrome-bg); border: 1px solid var(--border); border-radius: 999px;
+    backdrop-filter: blur(24px);
+    font-size: 12px; font-weight: 600; letter-spacing: 0.025em; color: var(--text);
+  }
+  #bell { left: 1784px; top: 100px; position: absolute; }
+  #bell .badge {
+    position: absolute; left: 24px; top: -4px; min-width: 16px; height: 16px; padding: 0 4px;
+    border-radius: 999px; background: var(--red-hot);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; font-weight: 600; color: var(--text);
+  }
+
+  #modes {
+    position: absolute; left: 100px; top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 4px; padding: 6px;
+    background: var(--chrome-bg); border: 1px solid var(--border); border-radius: 999px;
+    backdrop-filter: blur(24px);
+  }
+  .mode {
+    position: relative; width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text3); cursor: pointer; transition: background .2s, color .2s;
+  }
+  .mode:hover { background: var(--surface2); color: var(--text2); }
+  .mode.active { background: rgb(139 127 224 / 16%); color: var(--mode-manage); }
+  .mode .tip {
+    position: absolute; left: 52px; top: 50%; transform: translateY(-50%);
+    white-space: nowrap; font-size: 9px; font-weight: 600; letter-spacing: 0.08em;
+    color: var(--text3); background: var(--chrome-bg); border: 1px solid var(--border);
+    padding: 4px 9px; border-radius: 999px; opacity: 0; transition: opacity .2s;
+    pointer-events: none; backdrop-filter: blur(24px);
+  }
+  .mode:hover .tip { opacity: 1; }
+  .mode.active .tip { opacity: 1; color: var(--mode-manage); border-color: rgb(139 127 224 / 35%); }
+
+  #filters {
+    position: absolute; left: 100px; top: 941px;
+    display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+    background: var(--chrome-bg); border: 1px solid var(--border); border-radius: 999px;
+    backdrop-filter: blur(24px); font-size: 11px; font-weight: 500; color: var(--text3); cursor: pointer;
+  }
+  #filters .count {
+    min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+    background: var(--surface2); color: var(--text4);
+    font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  #zoom {
+    position: absolute; left: 1686px; top: 940px; height: 36px;
+    display: flex; align-items: center; overflow: hidden;
+    background: var(--chrome-bg); border: 1px solid var(--border); border-radius: 999px;
+    backdrop-filter: blur(24px);
+  }
+  #zoom .zbtn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--text3); cursor: pointer; }
+  #zoom .zbtn.off { opacity: 0.3; }
+  #zoom .zdiv { width: 1px; height: 20px; background: var(--border); }
+  #zoom .zlabel { padding: 0 12px; font-size: 9px; font-weight: 500; letter-spacing: 0.05em; color: var(--text); }
+
+  /* ── command bar ────────────────────────── */
+  #cmdwrap { position: absolute; left: 50%; top: 936px; transform: translateX(-50%); width: 620px; }
+  #cmdbar {
+    display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 18px;
+    background: var(--chrome-bg); border: 1px solid var(--border); border-radius: 999px;
+    backdrop-filter: blur(24px); transition: border-color .25s, box-shadow .25s;
+  }
+  #cmdbar:focus-within { border-color: var(--violet); box-shadow: 0 0 0 1px rgb(139 127 224 / 35%), 0 0 24px rgb(139 127 224 / 12%); }
+  #cmdbar .spark { color: var(--violet); flex-shrink: 0; display: flex; }
+  #cmdbar input {
+    flex: 1; background: transparent; border: none; outline: none;
+    font-family: inherit; font-size: 12px; color: var(--text);
+  }
+  #cmdbar input::placeholder { color: var(--text3); }
+  #cmdbar .kbd {
+    font-size: 9px; color: var(--text3); border: 1px solid var(--border); border-radius: 6px;
+    padding: 2px 5px; background: var(--surface1); flex-shrink: 0;
+  }
+  /* ── analysis takeover sheet ────────────── */
+  #anacard {
+    position: absolute; left: 50%; top: 50%; z-index: 5;
+    width: 1120px; height: 780px; padding: 44px 56px 30px;
+    transform: translate(-50%, -47%) scale(0.97);
+    border-radius: 24px; border: 1px solid var(--border2);
+    background: rgb(9 11 18 / 96%); backdrop-filter: blur(20px);
+    box-shadow: 0 40px 120px rgb(0 0 0 / 72%), inset 0 1px 0 #DCE6FF10;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity .45s cubic-bezier(.16,1,.3,1), transform .45s cubic-bezier(.16,1,.3,1);
+  }
+  #anacard.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+  #anacard .inner {
+    display: flex; flex-direction: column; align-items: center; gap: 24px;
+    width: 100%; transition: opacity .5s cubic-bezier(.16,1,.3,1), transform .5s cubic-bezier(.16,1,.3,1);
+  }
+  #anacard.loading .inner { opacity: 0; transform: translateY(8px); pointer-events: none; }
+  #ana-loading {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 16px;
+    opacity: 0; pointer-events: none; transition: opacity .35s ease;
+  }
+  #anacard.loading #ana-loading { opacity: 1; }
+  #ana-loading .ring { width: 56px; height: 56px; }
+  #ana-loading .ll-title { font-size: 16px; color: var(--text2); }
+  #ana-loading .ll-title b { color: var(--text); font-weight: 500; }
+  #ana-loading .ll-sub { font-size: 11px; color: var(--text3); }
+  .lline { width: 190px; height: 2px; border-radius: 999px; background: var(--surface2); overflow: hidden; margin-top: 6px; }
+  .lline i { display: block; width: 42%; height: 100%; border-radius: 999px; background: var(--violet); animation: lsweep 1.15s ease-in-out infinite; }
+  @keyframes lsweep { 0% { transform: translateX(-110%); } 100% { transform: translateX(350%); } }
+  #anacard .x {
+    position: absolute; top: 18px; right: 20px; width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center; border-radius: 999px;
+    color: var(--text3); font-size: 13px; cursor: pointer; z-index: 2;
+  }
+  #anacard .x:hover { background: var(--surface2); color: var(--text); }
+  #anacard .agent { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  #anacard .ring {
+    width: 64px; height: 64px; border-radius: 50%;
+    border: 1.5px solid var(--red-hot);
+    box-shadow: 0 0 28px rgb(239 68 68 / 40%), inset 0 0 20px rgb(239 68 68 / 18%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #anacard .who { font-size: 13px; color: var(--text3); }
+  #anacard .who b { color: var(--text2); font-weight: 500; }
+  #anacard .say {
+    font-size: 33px; font-weight: 300; letter-spacing: -0.015em; line-height: 1.28;
+    color: var(--text); text-align: center; max-width: 960px;
+  }
+  .evidence { display: flex; gap: 14px; align-items: stretch; width: 100%; }
+  .evcol { display: flex; flex-direction: column; gap: 9px; flex: 1; min-width: 0; text-align: left; }
+  .evh { font-size: 15px; font-weight: 500; letter-spacing: -0.01em; color: var(--text); padding-left: 2px; }
+  .ev {
+    flex: 1; border: 1px solid var(--border); border-radius: 18px;
+    background: rgb(16 22 39 / 45%); padding: 16px 20px;
+    display: flex; flex-direction: column; gap: 9px; text-align: left;
+  }
+  .ev .ov { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: var(--text3); }
+  .ev .q { font-size: 12.5px; line-height: 18px; color: var(--text2); }
+  .ev .q b { color: var(--text); font-weight: 500; }
+  .ev .chart-cap { display: flex; justify-content: space-between; font-size: 9px; color: var(--text3); padding-top: 2px; }
+  .fixpill {
+    display: flex; align-items: center; gap: 12px; padding: 12px 22px; font-size: 13.5px;
+    border: 1px solid rgb(139 127 224 / 45%); border-radius: 999px;
+    background: rgb(139 127 224 / 7%); font-size: 15px;
+  }
+  .fixpill .old { color: var(--text3); text-decoration: line-through; }
+  .fixpill .arr { color: var(--text3); }
+  .fixpill .new { color: var(--text); }
+  .acts { display: flex; align-items: center; gap: 14px; }
+  .act {
+    font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
+    padding: 11px 20px; border-radius: 999px; border: 1px solid transparent; white-space: nowrap;
+  }
+  .act.primary { background: #7C6FE0; color: #fff; }
+  .act.primary:hover { background: #8B7FE0; }
+  .act.ghost { background: var(--surface2); color: var(--text); }
+  .act.ghost:hover { background: var(--surface3); }
+  .act.link { background: none; color: var(--text3); }
+  .act.link:hover { color: var(--text2); }
+  .act.done { background: rgb(74 168 168 / 12%); border-color: var(--green); color: var(--green); }
+  .act.closebtn { background: none; border: 1px solid var(--border2); color: var(--text3); font-size: 11px; padding: 7px 18px; }
+  .act.closebtn:hover { background: var(--surface2); color: var(--text); }
+  #ana-status { font-size: 11px; color: var(--text3); min-height: 14px; text-align: center; }
+
+  /* ── agent cluster ──────────────────────── */
+  .comp { position: absolute; display: flex; flex-direction: column; align-items: center; padding: 16px 0; width: 448px; }
+  .ops-pill {
+    display: flex; align-items: center; gap: 6px; padding: 6px 11px;
+    border-radius: 999px; background: var(--card-bg); border: 1.2px solid var(--green);
+    font-size: 11px; font-weight: 500; letter-spacing: -0.01em; color: #F2F4F8;
+  }
+  .hair-v { width: 1px; height: 24px; background: linear-gradient(180deg, rgb(255 255 255 / 4%), rgb(255 255 255 / 16%)); }
+  .midrow { display: flex; align-items: center; }
+  .dpill {
+    position: relative; display: flex; flex-direction: column; align-items: center;
+    width: 40px; padding: 12px 0; gap: 7px; border-radius: 20px;
+    background: var(--card-bg); border: 1.2px solid var(--green);
+    font-size: 12px; font-weight: 500; letter-spacing: -0.01em; color: #F2F4F8;
+  }
+  .dpill.amber { border-color: var(--amber); }
+  .dtag {
+    position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+    padding: 2px 7px; border-radius: 999px; background: var(--card-bg);
+    font-size: 6.5px; font-weight: 400; letter-spacing: 0.06em; color: #8890A0; white-space: nowrap;
+  }
+  .conn { width: 46px; height: 1px; }
+  .conn.l { background: linear-gradient(90deg, rgb(255 255 255 / 16%), rgb(255 255 255 / 5%)); }
+  .conn.r { background: linear-gradient(90deg, rgb(255 255 255 / 5%), rgb(255 255 255 / 16%)); }
+  .card {
+    position: relative; display: flex; flex-direction: column; align-items: center;
+    width: 240px; padding: 13px 19px 26px; gap: 9px; border-radius: 999px;
+    background: #080B19; border: 1px solid #1E2A44;
+    box-shadow: inset 0 1px 0 #DCE6FF12, 0 14px 35px #000000B3;
+  }
+  .name { display: flex; align-items: center; gap: 6px; font-size: 12px; letter-spacing: -0.01em; color: #F2F4F8; }
+  .name .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
+  .name .dot.red { background: var(--red-hot); }
+  .mrow { display: flex; align-items: flex-start; gap: 14px; }
+  .mcol { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .ring {
+    width: 50px; height: 50px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--card-bg); border: 1.2px solid var(--green);
+    box-shadow: inset 0 2px 4px #0000004D, 0 0 0 3px #4AA8A812;
+    font-size: 15px; font-weight: 500; letter-spacing: -0.01em; color: #F2F4F8;
+  }
+  .ring.amber { border-color: var(--amber); box-shadow: inset 0 2px 4px #0000004D, 0 0 0 3px #E8B55814; }
+  .ring.red { border-color: var(--red-hot); box-shadow: inset 0 2px 4px #0000004D, 0 0 0 3px #EF444418; }
+  .mlabel { font-size: 8.5px; color: rgb(255 255 255 / 40%); white-space: nowrap; }
+  .ab {
+    position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px;
+    background: #0E1220; border: 1px solid #2E3A55; box-shadow: 0 2px 6px #00000080; white-space: nowrap;
+  }
+  .ab .abdot { width: 4px; height: 4px; border-radius: 50%; background: var(--amber); }
+  .ab .abtxt { font-size: 7px; font-weight: 700; letter-spacing: 0.06em; color: #F2F4F8; }
+  .ab .abday { font-size: 7px; color: #8890A0; }
+
+  svg.ic { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="shader-root"></div>
+  <div id="dots"></div>
+  <canvas id="fxw" width="1920" height="1080"></canvas>
+
+  <!-- chrome -->
+  <button class="chrome-btn" id="app-menu" aria-label="Menu">
+    <svg class="ic" width="16" height="16" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div id="breadcrumb">Fleet</div>
+  <button class="chrome-btn" id="bell" aria-label="Notifications">
+    <svg class="ic" width="16" height="16" viewBox="0 0 24 24"><path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6"/><path d="M9 17v1a3 3 0 0 0 6 0v-1"/></svg>
+    <span class="badge">3</span>
+  </button>
+
+  <div id="modes">
+    <div class="mode active"><svg class="ic" width="17" height="17" viewBox="0 0 24 24"><path d="M12 20V10M18 20V4M6 20v-4"/></svg><span class="tip">PERFORMANCE</span></div>
+    <div class="mode"><svg class="ic" width="17" height="17" viewBox="0 0 24 24"><path d="m2 12 3-3 3 3-3 3zm7-7 3-3 3 3-3 3zm0 14 3-3 3 3-3 3zm7-7 3-3 3 3-3 3z"/></svg><span class="tip">LIVE</span></div>
+    <div class="mode"><svg class="ic" width="17" height="17" viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg><span class="tip">BUILD &amp; IMPROVE</span></div>
+    <div class="mode"><svg class="ic" width="17" height="17" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg><span class="tip">DATA &amp; GOVERN</span></div>
+  </div>
+
+  <div id="filters">
+    <svg class="ic" width="14" height="14" viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+    Filters <span class="count">0</span>
+  </div>
+
+  <div id="zoom">
+    <div class="zbtn off">−</div><div class="zdiv"></div>
+    <div class="zlabel">FLEET</div>
+    <div class="zdiv"></div><div class="zbtn">+</div>
+  </div>
+
+  <!-- analysis takeover sheet -->
+  <div id="scrim"></div>
+  <div id="anacard" role="dialog" aria-label="Fleet analysis">
+    <span class="x" id="ana-close">✕</span>
+    <div id="ana-loading">
+      <div class="ring">
+        <svg width="20" height="20" viewBox="0 0 24 24" style="stroke:#EF4444;fill:none;stroke-width:1.5;stroke-linecap:round"><path d="M4 14v-4M8 17V7M12 20V4M16 16V8M20 13v-2"/></svg>
+      </div>
+      <div class="ll-title">Analysing <b>Post_Care</b></div>
+      <div class="ll-sub">reading 4,211 conversations · last 7 days</div>
+      <div class="lline"><i></i></div>
+    </div>
+    <div class="inner">
+      <div class="agent">
+        <div class="ring">
+          <svg width="22" height="22" viewBox="0 0 24 24" style="stroke:#EF4444;fill:none;stroke-width:1.5;stroke-linecap:round"><path d="M4 14v-4M8 17V7M12 20V4M16 16V8M20 13v-2"/></svg>
+        </div>
+        <div class="who"><b>Post_Care</b> · agent diagnosis · last 7 days</div>
+      </div>
+
+      <div class="say">Post Care has been losing callbacks since Tuesday — its scheduling step can't write to Salesforce. 214 customers are waiting for a call back.</div>
+
+      <div class="evidence">
+        <div class="evcol">
+          <div class="evh">What broke</div>
+          <div class="ev">
+            <div class="ov">SALESFORCE · AUG 8, 14:20</div>
+            <div class="q">Write failed — unknown field <b>callback_time</b>. The CRM webhook schema renamed it overnight, and every write since has bounced.</div>
+          </div>
+        </div>
+        <div class="evcol">
+          <div class="evh">What it's causing</div>
+          <div class="ev">
+            <div class="ov">INBOUND QUEUE · NOW</div>
+            <div class="q">Each failed write retries into the agent's inbound channel — <b>214 queued</b>, saturation at <b>96%</b>. That's the amber ring on its INBOUND pill.</div>
+          </div>
+        </div>
+        <div class="evcol">
+          <div class="evh">The impact</div>
+          <div class="ev">
+            <div class="ov">CALLBACKS BOOKED · DAILY</div>
+            <svg id="anachart" width="100%" height="86" viewBox="0 0 354 86" preserveAspectRatio="none"></svg>
+            <div class="chart-cap"><span>Aug 4</span><span>Aug 8 · schema change</span><span>Today</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fixpill">
+        <span class="old">callback_time</span>
+        <span class="arr">→</span>
+        <span class="new">callback_at — remap the write step and replay the queue</span>
+      </div>
+
+      <div class="acts">
+        <button class="act primary" id="act-publish">✦ Publish fix — replay 214 callbacks</button>
+        <button class="act ghost" id="act-ab">Run as A/B on 10% first</button>
+        <button class="act link" id="act-share">Share with technical team</button>
+      </div>
+
+      <div id="ana-status">Projected: callbacks recover to ≈110/day · verified against the last 50 failures · rolls back with one click</div>
+
+      <button class="act closebtn" id="ana-close2">Close</button>
+    </div>
+  </div>
+
+  <!-- command bar -->
+  <div id="cmdwrap">
+    <div id="cmdbar">
+      <span class="spark"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><path d="M12 3l1.9 5.6L19.5 10.5l-5.6 1.9L12 18l-1.9-5.6L4.5 10.5l5.6-1.9z"/></svg></span>
+      <input id="cmdinput" type="text" placeholder='Ask your fleet anything — "why did callbacks drop on Post Care?"' />
+      <span class="kbd">⌘</span><span class="kbd">K</span>
+    </div>
+  </div>
+
+  <!-- agents injected here -->
+
+  <!-- boot overlay -->
+  <div id="boot">
+    <div class="bootbox"><span class="bootdot"></span><span>Loading agents</span></div>
+    <div class="bootline"><i></i></div>
+  </div>
+</div>
+
+<script type="module">
+  import React from 'https://esm.sh/react@18.3.1';
+  import { createRoot } from 'https://esm.sh/react-dom@18.3.1/client?deps=react@18.3.1';
+  import { MeshGradient } from 'https://esm.sh/@paper-design/shaders-react@0.0.80?deps=react@18.3.1';
+  import { createFx } from './fx.js';
+
+  /* ── shader background — exact props from the Paper board ── */
+  createRoot(document.getElementById('shader-root')).render(
+    React.createElement(MeshGradient, {
+      speed: 0.12,
+      scale: 3.44,
+      distortion: 0.25,
+      swirl: 0.1,
+      colors: ['#07080D', '#101627', '#0B0D17', '#07080D'],
+      style: { width: '100%', height: '100%' },
+    })
+  );
+
+  /* ── data ── */
+  const TEAL = '#4AA8A8', AMBER = '#E8B558', RED = '#EF4444';
+  const AGENTS = [
+    { id: 'sales',    x: 364,  y: 249, name: 'Sales',     ops: 6, inN: 3, outN: 2, glow: AMBER, dotRed: false,
+      metrics: [{ v: 76,  l: 'Deals Closed',    c: '' }, { v: 71, l: 'Resolution rate', c: '' }, { v: 64, l: 'Deflection', c: 'amber' }],
+      inAmber: false, outAmber: false, ab: '· 2d' },
+    { id: 'orders',   x: 1071, y: 242, name: 'Orders',    ops: 5, inN: 2, outN: 3, glow: TEAL, dotRed: false,
+      metrics: [{ v: 112, l: 'Issues Resolved', c: '' }, { v: 91, l: 'Resolution rate', c: '' }, { v: 78, l: 'Deflection', c: '' }],
+      inAmber: false, outAmber: false, ab: '· 1d' },
+    { id: 'postcare', x: 434,  y: 571, name: 'Post Care', ops: 4, inN: 3, outN: 1, glow: RED, dotRed: true,
+      metrics: [{ v: 38,  l: 'Callbacks',       c: 'red' }, { v: 84, l: 'Resolution rate', c: '' }, { v: 71, l: 'Deflection', c: '' }],
+      inAmber: true, outAmber: false, ab: '· 6d' },
+    { id: 'returns',  x: 1109, y: 623, name: 'Returns',   ops: 3, inN: 2, outN: 2, glow: TEAL, dotRed: false,
+      metrics: [{ v: 87,  l: 'Issues Resolved', c: '' }, { v: 88, l: 'Resolution rate', c: '' }, { v: 69, l: 'Deflection', c: '' }],
+      inAmber: false, outAmber: false, ab: '· 3d' },
+  ];
+
+  const stage = document.getElementById('stage');
+  const icPeople = '<svg class="ic" width="12" height="12" viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.9a3 3 0 0 1 0 6.2M21 21v-2a4 4 0 0 0-3-3.85"/></svg>';
+  const icIn  = '<svg class="ic" width="14" height="14" viewBox="0 0 24 24"><path d="M12 4v10M8 10l4 4 4-4"/><path d="M5 19h14"/></svg>';
+  const icOut = '<svg class="ic" width="14" height="14" viewBox="0 0 24 24"><path d="M12 18V8M8 12l4-4 4 4"/><path d="M5 21h14"/></svg>';
+
+  for (const a of AGENTS) {
+    const el = document.createElement('div');
+    el.className = 'comp'; el.id = 'comp-' + a.id;
+    el.style.left = a.x + 'px'; el.style.top = a.y + 'px';
+    el.innerHTML = `
+      <div class="ops-pill">${icPeople}${a.ops}</div>
+      <div class="hair-v"></div>
+      <div class="midrow">
+        <div class="dpill in ${a.inAmber ? 'amber' : ''}"><span class="dtag">INBOUND</span>${icIn}${a.inN}</div>
+        <div class="conn l"></div>
+        <div class="card">
+          <div class="name">${a.name}<span class="dot ${a.dotRed ? 'red' : ''}"></span></div>
+          <div class="mrow">
+            ${a.metrics.map(m => `<div class="mcol"><div class="ring ${m.c}">${m.v}</div><div class="mlabel">${m.l}</div></div>`).join('')}
+          </div>
+          <div class="ab"><span class="abdot"></span><span class="abtxt">A/B</span><span class="abday">${a.ab}</span></div>
+        </div>
+        <div class="conn r"></div>
+        <div class="dpill out ${a.outAmber ? 'amber' : ''}">${icOut}${a.outN}</div>
+      </div>`;
+    stage.appendChild(el);
+  }
+
+  /* ── stage scaling ── */
+  function fit() {
+    const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+    stage.style.transform = `translate(-50%, -50%) scale(${s})`;
+  }
+  addEventListener('resize', fit); fit();
+
+  /* ── WebGL effect layer: molten rims + plasma strand ── */
+  const fx = createFx(document.getElementById('fxw'));
+
+  // measure capsule geometry (card rect within the 1920x1080 stage space)
+  function stageRect(el) {
+    const s = stage.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    const k = 1920 / s.width;
+    return { x: (r.left - s.left) * k, y: (r.top - s.top) * k, w: r.width * k, h: r.height * k };
+  }
+
+  let strands = null; // [{ a, b, seed, hov }] anchors on the pills
+  let mouse = { x: -1e4, y: -1e4 };
+  let hov = 0;        // smoothed hover intensity on the strand
+  addEventListener('pointermove', (e) => {
+    const s = stage.getBoundingClientRect();
+    const k = 1920 / s.width;
+    mouse = { x: (e.clientX - s.left) * k, y: (e.clientY - s.top) * k };
+  });
+
+  function hexV3(h) { return [parseInt(h.slice(1,3),16)/255, parseInt(h.slice(3,5),16)/255, parseInt(h.slice(5,7),16)/255]; }
+
+  function buildFx() {
+    const caps = [], cols = [], urgs = [];
+    for (const a of AGENTS) {
+      const r = stageRect(document.querySelector('#comp-' + a.id + ' .card'));
+      caps.push(r.x + r.w / 2, r.y + r.h / 2, r.w / 2, r.h / 2);
+      cols.push(...hexV3(a.glow));
+      urgs.push(a.glow === RED ? 1 : a.glow === AMBER ? 0.55 : 0.3);
+    }
+    if (fx) fx.setScene({ caps, cols, urgs });
+    const anchor = (sel, side) => {
+      const r = stageRect(document.querySelector(sel));
+      return { x: side === 'out' ? r.x + r.w + 2 : r.x - 2, y: r.y + r.h / 2 };
+    };
+    strands = [
+      { a: anchor('#comp-sales .dpill.out', 'out'),  b: anchor('#comp-returns .dpill.in', 'in'), seed: 0,   hov: 0 },
+      { a: anchor('#comp-orders .dpill.out', 'out'), b: anchor('#comp-returns .dpill.in', 'in'), seed: 2.7, hov: 0 },
+    ];
+  }
+
+  function bez(p0, p1, p2, p3, t) {
+    const mt = 1 - t;
+    return {
+      x: mt*mt*mt*p0.x + 3*mt*mt*t*p1.x + 3*mt*t*t*p2.x + t*t*t*p3.x,
+      y: mt*mt*mt*p0.y + 3*mt*mt*t*p1.y + 3*mt*t*t*p2.y + t*t*t*p3.y,
+    };
+  }
+
+  function draw(tms) {
+    const t = tms / 1000;
+    if (fx && strands) {
+      const packed = strands.map((S) => {
+        const { a, b, seed } = S;
+        // smooth horizontal tangents: exit the out-pill rightward, enter the in-pill from the left
+        const len = Math.hypot(b.x - a.x, b.y - a.y);
+        const L = Math.min(Math.max(len * 0.35, 60), 220);
+        const p1 = { x: a.x + L + Math.sin(t * 0.71 + seed * 2) * 5,
+                     y: a.y + Math.sin(t * 0.62 + seed) * 9 + Math.sin(t * 1.27 + seed * 2) * 4 };
+        const p2 = { x: b.x - L + Math.sin(t * 0.66 + 1.3 + seed) * 5,
+                     y: b.y + Math.sin(t * 0.54 + 1.7 + seed) * 10 + Math.sin(t * 1.09 + 2 + seed) * 3 };
+        // hover: how close is the cursor to this strand?
+        let dmin = 1e9;
+        for (let i = 0; i <= 32; i++) {
+          const p = bez(a, p1, p2, b, i / 32);
+          const dd = Math.hypot(mouse.x - p.x, mouse.y - p.y);
+          if (dd < dmin) dmin = dd;
+        }
+        S.hov += ((dmin < 60 ? 1 : 0) - S.hov) * 0.07;
+        return { p0: a, p1, p2, p3: b, hov: S.hov };
+      });
+      const rv = (t0, dur) => (t0 < 0 ? 0 : Math.min(Math.max((tms - t0) / dur, 0), 1));
+      const sm = (k) => k * k * (3 - 2 * k);
+      fx.render({
+        t, strands: packed,
+        revA: sm(rv(anim.revA, 1150)),
+        revB: sm(rv(anim.revB, 1150)),
+        glowM: 1 - Math.pow(1 - rv(anim.glow, 1400), 2.5),
+      });
+    }
+    requestAnimationFrame(draw);
+  }
+
+  /* ── intro choreography ── */
+  const anim = { revA: -1, revB: -1, glow: -1 };
+  const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
+
+  function countUp(el, target, dur, delay) {
+    el.textContent = '0';
+    const t0 = performance.now() + delay;
+    (function tick(now) {
+      const k = Math.min(Math.max((now - t0) / dur, 0), 1);
+      el.textContent = Math.round(target * (1 - Math.pow(1 - k, 3)));
+      if (k < 1) requestAnimationFrame(tick);
+    })(performance.now());
+  }
+
+  document.fonts.ready.then(() => {
+    requestAnimationFrame(() => { document.querySelector('#boot .bootline i').style.width = '100%'; });
+    requestAnimationFrame(draw);
+
+    const BASE = 820;
+    setTimeout(() => document.getElementById('boot').classList.add('hide'), BASE - 60);
+
+    // chrome drifts in
+    [['#app-menu', '', 0, -10], ['#breadcrumb', '', 0, -10], ['#bell', '', 0, -10],
+     ['#modes', 'translateY(-50%)', -14, 0], ['#filters', '', 0, 12],
+     ['#cmdwrap', 'translateX(-50%)', 0, 14], ['#zoom', '', 0, 12]].forEach(([sel, base, x, y], i) => {
+      document.querySelector(sel).animate(
+        [{ opacity: 0, transform: `${base} translate(${x}px, ${y}px)` },
+         { opacity: 1, transform: `${base} translate(0px, 0px)` }],
+        { duration: 500, delay: BASE + i * 55, easing: EASE, fill: 'both' });
+    });
+
+    // agents assemble — surface, then connectors extend outward, ops up, A/B down, counters roll
+    AGENTS.forEach((a, i) => {
+      const D = BASE + 160 + i * 130;
+      const c = document.getElementById('comp-' + a.id);
+      c.querySelector('.card').animate(
+        [{ opacity: 0, transform: 'scale(0.93)' }, { opacity: 1, transform: 'scale(1)' }],
+        { duration: 560, delay: D, easing: EASE, fill: 'both' });
+      c.querySelector('.hair-v').animate(
+        [{ height: '0px', opacity: 0 }, { height: '24px', opacity: 1 }],
+        { duration: 380, delay: D + 240, easing: EASE, fill: 'both' });
+      c.querySelector('.ops-pill').animate(
+        [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'translateY(0px)' }],
+        { duration: 460, delay: D + 300, easing: EASE, fill: 'both' });
+      c.querySelectorAll('.conn').forEach((el) => el.animate(
+        [{ width: '0px' }, { width: '46px' }],
+        { duration: 440, delay: D + 260, easing: EASE, fill: 'both' }));
+      c.querySelectorAll('.dpill').forEach((el, j) => el.animate(
+        [{ opacity: 0, transform: `translateX(${j === 0 ? 10 : -10}px) scale(0.92)` }, { opacity: 1, transform: 'translateX(0px) scale(1)' }],
+        { duration: 460, delay: D + 400, easing: EASE, fill: 'both' }));
+      c.querySelector('.ab').animate(
+        [{ opacity: 0, transform: 'translateX(-50%) translateY(-8px)' }, { opacity: 1, transform: 'translateX(-50%) translateY(0px)' }],
+        { duration: 440, delay: D + 430, easing: EASE, fill: 'both' });
+      c.querySelectorAll('.ring').forEach((r, j) => countUp(r, a.metrics[j].v, 900, D + 360 + j * 80));
+    });
+
+    // strands draw + glows bloom once layout has settled
+    setTimeout(() => {
+      buildFx();
+      const now = performance.now();
+      anim.revA = now + 100;
+      anim.revB = now + 340;
+      anim.glow = now + 380;
+    }, BASE + 160 + 3 * 130 + 900);
+  });
+  addEventListener('resize', () => setTimeout(buildFx, 50));
+
+  /* ── analysis chart ── */
+  (function buildChart() {
+    const svg = document.getElementById('anachart');
+    const W = 354, H = 86, PAD = 5;
+    const data = [122, 118, 126, 121, 64, 47, 38];
+    const max = 140, min = 20;
+    const X = (i) => PAD + (i / (data.length - 1)) * (W - PAD * 2);
+    const Y = (v) => PAD + (1 - (v - min) / (max - min)) * (H - PAD * 2);
+    const pts = data.map((v, i) => `${X(i)},${Y(v)}`).join(' ');
+    const dropX = X(4);
+    svg.innerHTML = `
+      <defs>
+        <linearGradient id="lineg" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#4AA8A8"/><stop offset="0.52" stop-color="#4AA8A8"/>
+          <stop offset="0.72" stop-color="#E8B558"/><stop offset="1" stop-color="#EF4444"/>
+        </linearGradient>
+        <linearGradient id="areag" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="rgb(255 255 255 / 7%)"/><stop offset="1" stop-color="rgb(255 255 255 / 0%)"/>
+        </linearGradient>
+      </defs>
+      <line x1="${PAD}" y1="${Y(110)}" x2="${W - PAD}" y2="${Y(110)}" stroke="rgb(255 255 255 / 8%)" stroke-dasharray="3 4" stroke-width="1"/>
+      <text x="${PAD + 2}" y="${Y(110) - 4}" fill="rgb(255 255 255 / 25%)" font-size="8" font-family="Geist">target 110</text>
+      <polygon points="${PAD},${H - PAD} ${pts} ${W - PAD},${H - PAD}" fill="url(#areag)"/>
+      <line x1="${dropX}" y1="${PAD}" x2="${dropX}" y2="${H - PAD}" stroke="rgb(239 68 68 / 30%)" stroke-dasharray="2 3" stroke-width="1"/>
+      <polyline points="${pts}" fill="none" stroke="url(#lineg)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="${dropX}" cy="${Y(data[4])}" r="3" fill="#0C0F1C" stroke="#E8B558" stroke-width="1.5"/>
+      <circle cx="${X(6)}" cy="${Y(data[6])}" r="3.5" fill="#EF4444">
+        <animate attributeName="opacity" values="1;0.35;1" dur="1.6s" repeatCount="indefinite"/>
+      </circle>`;
+  })();
+
+  /* ── command bar behaviour ── */
+  const input = document.getElementById('cmdinput');
+  const card = document.getElementById('anacard');
+  const scrim = document.getElementById('scrim');
+  const anaStatus = document.getElementById('ana-status');
+  const closeCard = () => { card.classList.remove('show', 'loading'); scrim.classList.remove('show'); };
+  scrim.addEventListener('click', closeCard);
+  addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); input.focus(); }
+    if (e.key === 'Escape') { input.blur(); closeCard(); }
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' || !input.value.trim()) return;
+    const q = input.value;
+    input.value = '';
+    input.placeholder = q;
+    input.blur();
+    card.classList.add('show', 'loading');
+    scrim.classList.add('show');
+    clearTimeout(loadTimer);
+    loadTimer = setTimeout(revealModal, 2000);
+  });
+  let loadTimer;
+
+  // disclose the answer one section at a time
+  function revealModal() {
+    const parts = [
+      card.querySelector('.agent'),
+      card.querySelector('.say'),
+      ...card.querySelectorAll('.evcol'),
+      card.querySelector('.fixpill'),
+      card.querySelector('.acts'),
+      anaStatus,
+      card.querySelector('.closebtn'),
+    ];
+    parts.forEach((el, i) => {
+      el.animate(
+        [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'translateY(0px)' }],
+        { duration: 520, delay: 120 + i * 170, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'both' });
+    });
+    card.classList.remove('loading');
+  }
+  document.getElementById('ana-close').addEventListener('click', closeCard);
+  document.getElementById('ana-close2').addEventListener('click', closeCard);
+
+  /* footer actions — inline feedback for the demo */
+  document.getElementById('act-share').addEventListener('click', (e) => {
+    e.target.textContent = 'Shared ✓';
+    e.target.classList.add('done');
+    anaStatus.textContent = 'Sent to #getvocal-eng with the full trace · Priya N. notified';
+  });
+  document.getElementById('act-ab').addEventListener('click', (e) => {
+    e.target.textContent = 'A/B staged ✓';
+    e.target.classList.add('done');
+    anaStatus.textContent = 'Variant B (fixed mapping) staged on 10% of traffic · auto-promote at +20% callbacks';
+  });
+  document.getElementById('act-publish').addEventListener('click', (e) => {
+    const b = e.target;
+    b.textContent = 'Publishing…';
+    setTimeout(() => {
+      b.textContent = 'Live ✓ — replaying queue';
+      b.classList.remove('primary');
+      b.classList.add('done');
+      anaStatus.textContent = 'Fix published · replaying 214 queued callbacks · watching next 100 conversations';
+    }, 1100);
+  });
+</script>
+</body>
+</html>
