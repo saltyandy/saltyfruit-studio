@@ -16,9 +16,9 @@ export default defineConfig({
         entryFileNames: "rings.js",
         chunkFileNames: "rings-[name].js",
         assetFileNames: (info) =>
-          info.names?.[0]?.endsWith(".woff2")
-            ? "[name][extname]"
-            : "rings[extname]",
+          info.names?.[0]?.endsWith(".css")
+            ? "rings[extname]"
+            : "[name][extname]",
       },
     },
   },

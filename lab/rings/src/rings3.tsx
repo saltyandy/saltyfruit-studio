@@ -225,16 +225,23 @@ export function Rings3() {
   return (
     <div
       ref={rootRef}
-      className="relative overflow-x-clip"
+      /* PORTFOLIO EDIT: the rail is transparent on desktop — the cream
+         surface, rounding and clip live on the pinned STAGE below, so
+         while pinned it reads as the site's usual rounded media card
+         with page paper around it (root bg stays for the mobile band) */
+      className="relative overflow-x-clip max-md:bg-[#F0E9D8]"
       style={{
-        background: BG,
         color: INK,
         fontFamily: "var(--font-geist-sans), sans-serif",
       }}
     >
-      {/* ── the pinned stage ── */}
+      {/* ── the pinned stage — desktop pins as a rounded card: clear of
+          the 63px sticky site header, 20px gap at the bottom ── */}
       <div className="absolute inset-0">
-        <div className="sticky top-0 h-[100svh] md:h-screen">
+        <div
+          className="sticky top-0 h-[100svh] md:top-[76px] md:h-[calc(100svh-96px)] md:overflow-clip md:rounded-[10px]"
+          style={{ background: BG }}
+        >
           {/* everything lives inside the HERO's container (1440 cap +
               px-8 gutters, same edges as the nav and the video frame) —
               wider than max-w-7xl so the diagram gets more room */}
@@ -295,7 +302,9 @@ export function Rings3() {
                   the scene starts at 136px so the title breathes */}
               <div className="relative -mx-4 flex h-[62%] justify-center pt-[136px] md:mx-0 md:h-full md:items-center md:pt-[92px] md:pb-4">
                 <div
-                  className="relative h-full max-w-full md:h-auto md:w-[min(calc((100svh-140px)*0.977),calc(100%-2*clamp(200px,16vw,280px)-48px))]"
+                  /* PORTFOLIO EDIT: height budget shrunk 140→236px — the
+                     stage lost 96px to the card insets, same slack kept */
+                  className="relative h-full max-w-full md:h-auto md:w-[min(calc((100svh-236px)*0.977),calc(100%-2*clamp(200px,16vw,280px)-48px))]"
                   style={{ aspectRatio: "840 / 860" }}
                 >
                   <Scene beat={arrived ? beat : -1} arrived={arrived} />

@@ -30,6 +30,11 @@ import {
 
 import { getLenis } from "./smooth-scroll";
 
+import agentAvatar1 from "./assets/agent-1.jpg";
+import agentAvatar2 from "./assets/agent-2.jpg";
+import agentAvatar3 from "./assets/agent-3.jpg";
+import agentAvatar4 from "./assets/agent-4.jpg";
+
 /** 3D context cloud inside the LLM ring */
 const LLM_3D = true;
 /** just a soft gradient glow behind the scene (off — Andy prefers flat) */
@@ -433,13 +438,11 @@ export function HumanNode({ cx, cy }: { cx: number; cy: number }) {
 
 /** Real faces for the station chips (Andy 2026-08-10: "obvious that they
     are real human agents") — Flora-generated agent headshots (GPT Image
-    2, slim headsets, cream backdrop), 128px JPEGs in public/rings/. */
-export const STATION_AVATARS = [
-  "/rings/agent-1.jpg",
-  "/rings/agent-2.jpg",
-  "/rings/agent-3.jpg",
-  "/rings/agent-4.jpg",
-];
+    2, slim headsets, cream backdrop), 128px JPEGs in public/rings/.
+    PORTFOLIO EDIT: bundled copies imported through Vite instead of the
+    app's root-absolute /rings/ paths, so the URLs resolve from any host
+    page the bundle is dropped into. */
+export const STATION_AVATARS = [agentAvatar1, agentAvatar2, agentAvatar3, agentAvatar4];
 
 /** HUMAN AGENT station — Andy's board chip: 139×33, ink outline.
     fill flips to sand #EEDCB2 while the agent holds a task. */

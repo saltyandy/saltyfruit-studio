@@ -306,9 +306,11 @@ body.menu-open .menu-panel {
 
 /* ---------- rings explainer — live V3 landing section (slot 04) ----------
    A ~4-viewport scroll-driven scene living in the media grid like any
-   other card. overflow: clip (not hidden) rounds the corners without
-   becoming a scroll container — hidden would re-anchor the component's
-   position: sticky stage to this box and the pin would never engage. */
+   other card. On desktop the card look (cream, radius, clip) is on the
+   component's PINNED STAGE inside the bundle; this wrapper clip rounds
+   the mobile full-bleed band's ends. overflow: clip (not hidden) — hidden
+   would re-anchor the sticky stage to this box and the pin would never
+   engage. */
 
 #rings-explainer {
   border-radius: 10px;
