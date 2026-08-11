@@ -41,10 +41,25 @@
 
     <section class="case-media">
       <div class="duo">
-        <!-- 02/03 · the agent node, dark + light twins — Paper boards
-             "Node — Progressive Disclosure (Dark)" + "(Light)" -->
-        <div class="ph r-4x5"><p class="ph-label">02 · Agent node · blue-charcoal dark · Paper export</p></div>
-        <div class="ph r-4x5"><p class="ph-label">03 · Agent node · warm-paper light · Paper export</p></div>
+        <!-- 02 · the agent node, blue-charcoal dark — progressive disclosure
+             film: operators shelf (DiceBear roster), trigger flows + post-conv
+             sheet with live integrations. Recorded from lab/node-disclosure
+             (Playwright → VP9), interactions mirror gv-v3 DiscloseCluster. -->
+        <div class="media r-4x5">
+          <video autoplay muted loop playsinline preload="auto">
+            <source src="assets/getvocal/node-disclosure-v1.webm" type="video/webm" />
+            <source src="assets/getvocal/node-disclosure-v1.mp4" type="video/mp4" />
+          </video>
+        </div>
+        <!-- 03 · process reel: how we got here — 10 boards, wireframes →
+             cluster working → system → zoom/nav decisions → Paper DS.
+             Boards live on Page 1 of the "GetVocal V3 — Fleet UI" Paper file
+             (row of 900×1125 4x5s, left-to-right = play order); export @2x →
+             motion/public/gv-process/ → gv-manifest.json →
+             `npm run render:gv-process` (GvProcessReel, 1.2s hard cuts). -->
+        <div class="media r-4x5">
+          <video src="assets/getvocal/process-reel.mp4" autoplay muted loop playsinline preload="metadata"></video>
+        </div>
       </div>
 
       <!-- 04 · How GetVocal works — the rings animatic from the V3 landing
@@ -58,26 +73,46 @@
       <div id="rings-explainer"></div>
 
       <div class="duo">
-        <!-- 05 · detail panels: the five connector panels in the dark skin —
-             Paper board "Detail Panels — Dark" -->
-        <div class="ph r-1x1"><p class="ph-label">05 · Detail panels · dark skin · Paper export</p></div>
-        <!-- 06 · tokens & palette sheet — Paper board "Tokens & Palette" -->
-        <div class="ph r-1x1"><p class="ph-label">06 · Tokens &amp; palette sheet · Paper export</p></div>
+        <!-- 05/06 · the brand book, twice: light + dark cover twins from the
+             Figma "Get Vocal Design Book Apr 2026" (7:2 / 153:2), composed on
+             seamless #F4EFE3 / #1E1A38 tiles — Paper page "Case — Media
+             Boards" -->
+        <div class="media r-1x1">
+          <img src="assets/getvocal/brand-book-light.webp" alt="GetVocal brand book cover, paper edition — How GetVocal looks, reads, and behaves" />
+        </div>
+        <div class="media r-1x1">
+          <img src="assets/getvocal/brand-book-dark.webp" alt="GetVocal brand book cover, dark edition — the blue-charcoal twin of the same spread" />
+        </div>
       </div>
 
-      <!-- 07 · disclosure ladder: dormant → peek → open, the node language's
-           core idea as a single wide board -->
-      <div class="ph r-16x9"><p class="ph-label">07 · Disclosure ladder · dormant → peek → open</p></div>
+      <!-- 07 · the As-Is → Aurora platform sweep: six screens of the old
+           product cutting to their Aurora twins (Dashboard, Agents, Graph
+           Editor, Live Monitor, Governance, Call Dialer). Boards from the
+           Paper page "Platform Redesign — Aurora"; rendered via
+           `npm run render:gv-sweep` (GvSweepReel, 0.9s as-is → 1.5s aurora). -->
+      <div class="media r-16x9">
+        <video src="assets/getvocal/aurora-sweep.mp4" autoplay muted loop playsinline preload="metadata"></video>
+      </div>
 
       <div class="duo">
-        <!-- 08 · operators shelf blooming above the node, tethered down -->
-        <div class="ph r-4x5"><p class="ph-label">08 · Operators shelf · disclosed above node</p></div>
-        <!-- 09 · A/B experiment card — blue/violet variant channel -->
-        <div class="ph r-4x5"><p class="ph-label">09 · A/B experiment card · stacked variants</p></div>
+        <!-- 08 · node state system: "Quiet by default, loud only when it
+             matters" — health / lifecycle / data states. Paper board
+             "Node States — Pro" (exact 4:5) -->
+        <div class="media r-4x5">
+          <img src="assets/getvocal/node-states-pro.webp" alt="Node state system — health, lifecycle, and data states of the agent node, quiet by default" />
+        </div>
+        <!-- 09 · the bit of web: Platform Architecture site section, desktop
+             + mobile 390 collage — Paper page "Case — Media Boards" -->
+        <div class="media r-4x5">
+          <img src="assets/getvocal/web-platform-architecture.webp" alt="getvocal.ai platform architecture section — desktop and mobile, every conversation one living brain" />
+        </div>
       </div>
 
-      <!-- 10 · closing: the ten-agent fleet at rest, dark mode -->
-      <div class="ph r-16x9"><p class="ph-label">10 · Ten-agent fleet at rest · closing still</p></div>
+      <!-- 10 · closing: the fleet at rest — still from the hero film, before
+           the strands wake up -->
+      <div class="media r-16x9">
+        <img src="assets/getvocal/fleet-rest.webp" alt="The agent fleet at rest — four team capsules, quiet rings, blue-charcoal dark" />
+      </div>
     </section>
 
     <section class="more-work">

@@ -10,6 +10,8 @@
     "render:cinema-hero": "remotion render CinemaHero ../assets/video/cinema-hero-raw.mp4 && ffmpeg -y -i ../assets/video/cinema-hero-raw.mp4 -filter_complex \"[0:v]trim=start=2,setpts=PTS-STARTPTS[a];[0:v]trim=duration=2,setpts=PTS-STARTPTS[b];[a][b]xfade=transition=fade:duration=2:offset=22[v]\" -map \"[v]\" -c:v libx264 -crf 18 -pix_fmt yuv420p ../assets/video/cinema-hero.mp4 && rm ../assets/video/cinema-hero-raw.mp4",
     "render:orb-schematic": "remotion render OrbSchematic ../assets/video/orb-schematic.mp4",
     "render:process": "npm run manifest && remotion render ProcessReel ../assets/video/process-reel.mp4",
+    "render:gv-process": "remotion render GvProcessReel ../assets/getvocal/process-reel.mp4",
+    "render:gv-sweep": "remotion render GvSweepReel ../assets/getvocal/aurora-sweep.mp4",
     "render:process:gif": "npm run manifest && remotion render ProcessReel ../assets/video/process-reel.gif --codec=gif --every-nth-frame=2"
   },
   "dependencies": {

@@ -61,3 +61,20 @@ if (orbFlow) {
     { threshold: 0.35 }
   ).observe(orbFlow);
 }
+
+// Autoplay insurance for case-media films: Chrome (and Safari) can skip the
+// initial autoplay of an offscreen <video><source>…</video> and never retry.
+// Nudge any still-paused film the moment its card scrolls into view.
+const caseFilms = document.querySelectorAll(".case .media video[autoplay]");
+
+if (caseFilms.length) {
+  const nudge = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting && e.target.paused) e.target.play().catch(() => {});
+      }
+    },
+    { threshold: 0.15 }
+  );
+  caseFilms.forEach((v) => nudge.observe(v));
+}

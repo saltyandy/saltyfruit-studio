@@ -1,0 +1,64 @@
+{
+  "frames": [
+    {
+      "src": "gv-process/01-wf-operator-overview.png",
+      "tag": "WF-01",
+      "kind": "Wireframe",
+      "label": "Operator Overview"
+    },
+    {
+      "src": "gv-process/02-wf-panel-chrome.png",
+      "tag": "WF-02",
+      "kind": "Wireframe",
+      "label": "Panel Chrome"
+    },
+    {
+      "src": "gv-process/03-wk-operator-clusters.png",
+      "tag": "WK-03",
+      "kind": "Working",
+      "label": "Operator Clusters"
+    },
+    {
+      "src": "gv-process/04-wk-data-connections.png",
+      "tag": "WK-04",
+      "kind": "Working",
+      "label": "Data Connections"
+    },
+    {
+      "src": "gv-process/05-sys-team-interaction.png",
+      "tag": "SYS-05",
+      "kind": "System",
+      "label": "Team Interaction"
+    },
+    {
+      "src": "gv-process/06-dec-zoom-levels.png",
+      "tag": "DEC-06",
+      "kind": "Decisions",
+      "label": "Zoom Levels"
+    },
+    {
+      "src": "gv-process/07-dec-navigation-system.png",
+      "tag": "DEC-07",
+      "kind": "Decisions",
+      "label": "Navigation System"
+    },
+    {
+      "src": "gv-process/08-ds-tokens-palette.png",
+      "tag": "DS-08",
+      "kind": "Design System",
+      "label": "Tokens & Palette"
+    },
+    {
+      "src": "gv-process/09-ds-operator-modal.png",
+      "tag": "DS-09",
+      "kind": "Design System",
+      "label": "Operator Modal"
+    },
+    {
+      "src": "gv-process/10-ds-node-flow.png",
+      "tag": "DS-10",
+      "kind": "Design System",
+      "label": "Node Flow"
+    }
+  ]
+}

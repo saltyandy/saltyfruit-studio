@@ -28,6 +28,10 @@ import { AMBER, INK, Scene, STEPS } from "./rings2";
 /** section surface — one step deeper than page cream (rings-2's dial) */
 const BG = "#F0E9D8";
 
+/** PORTFOLIO EDIT: kill the desktop anchor-lock / arrival-snap machinery
+    in the embed — set false to restore the landing page's locked pacing */
+const EMBED_FREE_SCROLL = true;
+
 /** chapter → scene beat (1 is the absorb, played inside the 0→2 jump) */
 const ZONE_STAGES = [0, 2, 3, 4];
 
@@ -170,6 +174,12 @@ export function Rings3() {
   }, []);
 
   useEffect(() => {
+    /* PORTFOLIO EDIT: no anchor locks in the case-page embed — mid-page,
+       the arrival snap + per-chapter scroll holds read as the page
+       fighting the reader (Andy 2026-08-11: "kind of annoying"). The
+       rail zones still flip chapters; scrubbing is free. Mobile swipe
+       stepping below is untouched. */
+    if (EMBED_FREE_SCROLL) return;
     if (!arrived || !inView) return;
     const lenis = getLenis();
     if (!lenis) return;

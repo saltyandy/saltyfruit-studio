@@ -1,0 +1,815 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GetVocal V3 — Node disclosure (slot 02 film)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&display=swap" rel="stylesheet" />
+<style>
+  /* ── DARK palette, verbatim from gv-v3 src/components/disclose/palette.ts ── */
+  :root {
+    --bg: #07080D;
+    --card: #080B19;
+    --tile: #101627;
+    --tile-raised: #13172A;
+    --card-border: #1E2A44;
+    --border: #2E3650;
+    --rail: #2A3350;
+    --divider: #1A2238;
+    --text: #F2F4F8;
+    --text2: #8890A0;
+    --text3: #5A6275;
+    --metric-label: rgba(255,255,255,0.40);
+    --teal: #4AA8A8;
+    --amber: #E8B558;
+    --coral: #F26B54;
+    --idle: #6B7280;
+    --glyph: rgba(255,255,255,0.52);
+    --bubble-bg: #0B1120;
+    --ab-chip-bg: #0E1220;
+    --ab-chip-border: #2E3A55;
+    --card-shadow: inset 0 1px 0 #DCE6FF12, 0 18px 44px rgba(0,0,0,0.7);
+    --panel-shadow: inset 0 1px 0 #DCE6FF12, 0 24px 60px rgba(0,0,0,0.7);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #000; overflow: hidden; }
+  body { font-family: 'Geist', system-ui, sans-serif; }
+
+  /* fixed 1200x1500 (4:5) stage, scaled to fit the window */
+  #stage {
+    position: absolute; left: 50%; top: 50%;
+    width: 1200px; height: 1500px;
+    transform-origin: center center;
+    background: var(--bg);
+    overflow: hidden;
+  }
+  #shader-root, #shader-root > * { position: absolute; inset: 0; }
+  #shader-root { opacity: 0.7; }
+  #tex {
+    position: absolute; inset: 0; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpath d='M20 16v8M16 20h8' stroke='white' stroke-opacity='0.04' stroke-width='1' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-size: 54px 54px;
+  }
+  #fxw { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; }
+
+  /* world: product-px coordinate space (800x1000) scaled up to the stage */
+  #world {
+    position: absolute; left: 0; top: 0;
+    width: 800px; height: 1000px;
+    transform: scale(1.5);
+    transform-origin: top left;
+  }
+  #camera {
+    position: absolute; inset: 0;
+    transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  svg.ic { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+  /* ── light chrome (screen-record cues) ─────────────────── */
+  #breadcrumb {
+    position: absolute; left: 34px; top: 34px; height: 30px;
+    display: flex; align-items: center; gap: 7px; padding: 0 14px;
+    background: rgb(12 14 22 / 92%); border: 1px solid var(--border); border-radius: 999px;
+    font-size: 10.5px; font-weight: 600; letter-spacing: 0.025em; color: var(--text);
+    opacity: 0; z-index: 30;
+  }
+  #breadcrumb .dim { color: var(--text3); font-weight: 500; }
+  #zoomtag {
+    position: absolute; right: 34px; bottom: 34px; height: 30px;
+    display: flex; align-items: center; gap: 10px; padding: 0 4px;
+    background: rgb(12 14 22 / 92%); border: 1px solid var(--border); border-radius: 999px;
+    opacity: 0; z-index: 30;
+  }
+  #zoomtag .zbtn { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--text3); }
+  #zoomtag .zlabel { font-size: 8.5px; font-weight: 500; letter-spacing: 0.05em; color: var(--text); }
+
+  /* ── cluster ───────────────────────────────────────────── */
+  #cluster { position: absolute; left: 250px; top: 414px; width: 300px; }
+
+  /* node card — geometry mirrors NodeCard in DiscloseNode.tsx */
+  #nodecard {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column; align-items: center; overflow: visible;
+    width: 300px; border-radius: 9999px;
+    padding: 16px 24px 32px; gap: 11px;
+    background: var(--card); border: 1px solid var(--card-border);
+    box-shadow: var(--card-shadow);
+    opacity: 0;
+    transition: opacity .45s ease;
+  }
+  .namerow { display: flex; align-items: center; gap: 8px; }
+  .namerow .nm { font-size: 15px; font-weight: 400; letter-spacing: -0.01em; line-height: 20px; color: var(--text); }
+  .namerow .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--amber); }
+  .bubbles { display: flex; align-items: flex-start; gap: 18px; }
+  .bubble { display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0; }
+  .bcirc {
+    width: 62px; height: 62px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bubble-bg); border: 1.5px solid var(--teal);
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.30), 0 0 0 4px #4AA8A812;
+  }
+  .bubble.amber .bcirc { border-color: var(--amber); box-shadow: inset 0 2px 5px rgba(0,0,0,0.30), 0 0 0 4px #E8B55814; }
+  .bcirc .v { font-size: 19px; font-weight: 500; letter-spacing: -0.01em; color: var(--text); }
+  .bubble .bl { font-size: 10.5px; line-height: 13px; color: var(--metric-label); white-space: nowrap; }
+  .abchip {
+    position: absolute; bottom: -12px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 5px; padding: 3px 10px;
+    border-radius: 999px; background: var(--ab-chip-bg); border: 1px solid var(--ab-chip-border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5); white-space: nowrap;
+  }
+  .abchip .adot { width: 5px; height: 5px; border-radius: 999px; background: var(--amber); }
+  .abchip .at { font-size: 9px; font-weight: 700; letter-spacing: 0.06em; color: var(--text); }
+  .abchip .ad { font-size: 9px; color: var(--text2); }
+
+  /* ── operators: pill above, shelf blooms over it ───────── */
+  #ops-wrap {
+    position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; z-index: 2;
+  }
+  #shelf-slot { display: flex; flex-direction: column; align-items: center; }
+  .rail-v { width: 1px; background: var(--rail); }
+  #ops-pill {
+    display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+    border-radius: 999px; background: var(--tile-raised); border: 1.5px solid var(--teal);
+    box-shadow: var(--card-shadow); cursor: pointer;
+    color: var(--glyph); opacity: 0;
+    transition: opacity .4s ease, box-shadow .25s ease;
+  }
+  #ops-pill .cnt { font-size: 14px; color: var(--text); }
+  #ops-pill.hot { box-shadow: var(--card-shadow), 0 0 0 4px #4AA8A81f; }
+
+  #shelf {
+    display: flex; flex-direction: column; overflow: hidden;
+    width: 304px; border-radius: 16px;
+    background: var(--card); border: 1px solid var(--card-border);
+    box-shadow: var(--panel-shadow); transform-origin: bottom center;
+  }
+  .panel-head {
+    display: flex; align-items: center; gap: 9px; padding: 12px 18px 11px;
+  }
+  .panel-head .lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: var(--text2); }
+  .panel-head .chip { padding: 1px 6px; border-radius: 999px; background: var(--tile); font-size: 10px; font-weight: 600; color: var(--text2); }
+  .panel-head .sp { flex: 1; }
+  .panel-head .meta { font-size: 10.5px; font-weight: 500; color: var(--text2); }
+  .legend { display: flex; align-items: center; gap: 14px; padding: 0 18px 12px; }
+  .legend .li { display: flex; align-items: center; gap: 5px; }
+  .legend .ld { width: 6px; height: 6px; border-radius: 999px; }
+  .legend span { font-size: 10.5px; color: var(--text2); }
+  .oprow {
+    display: flex; align-items: center; gap: 11px; padding: 9px 18px;
+    border-top: 1px solid var(--divider);
+  }
+  .oprow .av { width: 26px; height: 26px; flex-shrink: 0; }
+  .oprow .av img { width: 100%; height: 100%; display: block; border-radius: 999px; background: var(--tile); }
+  .oprow .onm { flex: 1; font-size: 12.5px; font-weight: 500; color: var(--text); }
+  .oprow .bar { width: 46px; height: 4px; border-radius: 2px; background: var(--tile); flex-shrink: 0; }
+  .oprow .bar i { display: block; height: 4px; border-radius: 2px; background: var(--teal); }
+  .oprow .pct { width: 34px; text-align: right; font-size: 11px; font-weight: 500; flex-shrink: 0; }
+  .oprow .sdot { width: 7px; height: 7px; border-radius: 999px; flex-shrink: 0; }
+  #ops-more { overflow: hidden; height: 0; }
+  #ops-toggle {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 10px 18px; border-top: 1px solid var(--divider); cursor: pointer;
+  }
+  #ops-toggle span { font-size: 11px; font-weight: 500; color: var(--text3); }
+  #ops-toggle svg { transition: transform .2s; }
+
+  /* ── inbound flank ─────────────────────────────────────── */
+  #inbound-wrap {
+    position: absolute; right: calc(100% + 18px); top: 50%; transform: translateY(-50%);
+    display: flex; align-items: center; z-index: 2;
+  }
+  .flank-tag {
+    position: absolute; left: 50%; transform: translateX(-50%); top: -24px;
+    border-radius: 999px; padding: 2px 9px; background: var(--tile); white-space: nowrap;
+  }
+  .flank-tag span { font-size: 8px; letter-spacing: 0.06em; color: var(--text2); }
+  #inbound-pill {
+    position: relative; display: flex; flex-direction: column; align-items: center;
+    width: 52px; padding: 15px 0; gap: 9px; border-radius: 26px;
+    background: var(--tile-raised); border: 1.5px solid var(--amber);
+    box-shadow: var(--card-shadow); cursor: pointer; color: var(--glyph);
+    opacity: 0; transition: opacity .4s ease;
+  }
+  #inbound-pill .cnt { font-size: 15px; letter-spacing: -0.01em; color: var(--text); }
+  #in-peek { display: flex; flex-direction: column; align-items: center; gap: 9px; overflow: hidden; height: 0; opacity: 0; transition: height .18s ease, opacity .18s ease; }
+  #in-peek .pdiv { width: 18px; height: 1px; background: var(--rail); }
+
+  #trigger-panel {
+    display: none; flex-direction: column; overflow: hidden;
+    width: 344px; border-radius: 16px;
+    background: var(--card); border: 1px solid var(--card-border);
+    box-shadow: var(--panel-shadow); transform-origin: right center;
+  }
+  .flowrow { display: flex; flex-direction: column; gap: 9px; padding: 11px 18px; border-top: 1px solid var(--divider); }
+  .flowrow .fr-top { display: flex; align-items: center; gap: 10px; }
+  .chtile {
+    width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .chtile img { display: block; }
+  .fr-meta { display: flex; flex-direction: column; gap: 1px; flex: 1; }
+  .fr-meta .t { font-size: 12.5px; font-weight: 500; color: var(--text); }
+  .fr-meta .s { font-size: 10px; color: var(--text3); }
+  .fr-dot { width: 6px; height: 6px; border-radius: 999px; background: var(--teal); flex-shrink: 0; }
+  .steps { display: flex; align-items: flex-start; flex-wrap: wrap; padding-left: 36px; gap: 5px; row-gap: 8px; }
+  .step { display: flex; align-items: flex-start; gap: 5px; }
+  .step .chev { margin-top: 6px; }
+  .stepcol { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+  .stepchip {
+    display: flex; align-items: center; gap: 5px; padding: 2px 8px;
+    border-radius: 999px; background: var(--tile-raised); border: 1px solid var(--border);
+  }
+  .stepchip .mark { width: 11px; height: 11px; border-radius: 3px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .stepchip .mark img { width: 7px; height: 7px; display: block; }
+  .stepchip .app { font-size: 9.5px; font-weight: 500; color: var(--text2); white-space: nowrap; }
+  .stepcap { font-size: 9px; line-height: 11px; color: var(--text3); padding-left: 2px; white-space: nowrap; }
+
+  /* ── post-conversation flank ───────────────────────────── */
+  #post-wrap {
+    position: absolute; left: calc(100% + 18px); top: 50%; transform: translateY(-50%);
+    display: flex; align-items: center; z-index: 2;
+  }
+  #post-pill {
+    position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    width: 50px; padding: 15px 0; gap: 9px; border-radius: 25px;
+    background: var(--tile-raised); border: 1.5px solid var(--teal);
+    box-shadow: var(--card-shadow); cursor: pointer; color: var(--glyph);
+    opacity: 0; transition: opacity .4s ease, box-shadow .25s ease;
+  }
+  #post-pill .cnt { font-size: 15px; letter-spacing: -0.01em; color: var(--text); }
+  #post-pill.hot { box-shadow: var(--card-shadow), 0 0 0 4px #4AA8A81f; }
+
+  /* ── right-docked post-conversation sheet ──────────────── */
+  #sheet {
+    position: absolute; right: 0; top: 0; z-index: 40;
+    width: 400px; height: 1000px;
+    display: flex; flex-direction: column;
+    background: var(--card); border-left: 1px solid var(--border);
+    box-shadow: var(--panel-shadow);
+    transform: translateX(103%);
+  }
+  #sheet .sh-head { display: flex; align-items: flex-start; gap: 12px; padding: 24px 22px 18px; }
+  #sheet .marks { display: flex; }
+  .bmark {
+    width: 26px; height: 26px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--card);
+  }
+  .bmark + .bmark { margin-left: -6px; }
+  .bmark img { display: block; }
+  .bmark .txt { font-size: 10px; font-weight: 700; color: #fff; }
+  #sheet .sh-titles { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+  #sheet .sh-t { font-size: 16px; font-weight: 500; color: var(--text); }
+  #sheet .sh-s { font-size: 11px; color: var(--text3); }
+  #sheet .x {
+    width: 28px; height: 28px; border-radius: 999px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text3); font-size: 12px; cursor: pointer;
+  }
+  .sh-div { height: 1px; background: var(--divider); }
+  .sh-sec { display: flex; flex-direction: column; gap: 14px; padding: 18px 22px; }
+  .sh-sec .sec-h { display: flex; align-items: center; gap: 9px; }
+  .sec-h .acc { width: 3px; height: 13px; border-radius: 2px; }
+  .sec-h span { font-size: 11px; font-weight: 600; letter-spacing: 0.09em; color: var(--text2); }
+  .tiles { display: flex; gap: 10px; }
+  .stat-tile {
+    flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 14px;
+    border-radius: 8px; background: var(--tile); border: 1px solid var(--border);
+  }
+  .stat-tile.raised { background: var(--tile-raised); }
+  .stat-tile .tv { display: flex; align-items: baseline; gap: 2px; }
+  .stat-tile .tv b { font-size: 22px; font-weight: 500; letter-spacing: -0.01em; color: var(--text); }
+  .stat-tile .tv i { font-style: normal; font-size: 12px; color: var(--text2); }
+  .stat-tile .tl { font-size: 9.5px; letter-spacing: 0.07em; color: var(--text2); }
+  .brandrow { display: flex; justify-content: space-between; }
+  .brand { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+  .brand .bchip {
+    width: 36px; height: 36px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .brand .bchip img { display: block; }
+  .brand .bchip .txt { font-size: 12px; font-weight: 700; color: #fff; }
+  .brand .bn { font-size: 9px; color: var(--text3); }
+  .varrow { display: flex; align-items: center; justify-content: space-between; }
+  .varrow .vchip { padding: 7px 12px; border-radius: 6px; background: var(--tile); border: 1px solid var(--border); }
+  .varrow .vchip span { font-size: 12.5px; color: var(--text); font-family: 'Geist', monospace; }
+  .varrow .uses { font-size: 11.5px; color: var(--text3); }
+  #sheet .sh-foot { display: flex; gap: 10px; padding: 18px 22px 24px; margin-top: auto; }
+  .btn {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    height: 40px; border-radius: 999px; font-size: 12.5px; font-weight: 500; cursor: pointer;
+  }
+  .btn.ghost { background: none; border: 1px solid var(--border); color: var(--text2); }
+  .btn.primary { background: #F2F4F8; border: none; color: #0B1120; }
+
+  /* ── cursor + ripple ───────────────────────────────────── */
+  #cursor { position: absolute; left: 0; top: 0; z-index: 60; pointer-events: none; opacity: 0; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.55)); }
+  .ripple {
+    position: absolute; z-index: 55; width: 34px; height: 34px; border-radius: 50%;
+    border: 1.5px solid rgba(242,244,248,0.75); pointer-events: none;
+    transform: translate(-50%, -50%) scale(0.25); opacity: 0.9;
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="shader-root"></div>
+  <div id="tex"></div>
+  <canvas id="fxw" width="1200" height="1500"></canvas>
+
+  <div id="world">
+    <div id="breadcrumb"><span class="dim">Fleet</span><span class="dim">▸</span><span>Sales</span></div>
+    <div id="zoomtag"><div class="zbtn">−</div><div class="zlabel">NODE</div><div class="zbtn">+</div></div>
+
+    <div id="camera">
+      <div id="cluster">
+
+        <!-- OPERATORS — pill + shelf above, tethered down to the node -->
+        <div id="ops-wrap">
+          <div id="shelf-slot"></div>
+          <div id="ops-pill">
+            <svg class="ic" width="15" height="15" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span class="cnt">8</span>
+          </div>
+          <div class="rail-v" id="ops-rail" style="height: 0px;"></div>
+        </div>
+
+        <!-- INBOUND — pill (dormant/peek) or Trigger Flows panel, + connector -->
+        <div id="inbound-wrap">
+          <div id="trigger-panel"></div>
+          <div id="inbound-pill">
+            <div class="flank-tag"><span>INBOUND</span></div>
+            <svg class="ic" width="17" height="17" viewBox="0 0 24 24"><path d="M4 14v3a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-3M12 3v11M8 10l4 4 4-4"/></svg>
+            <span class="cnt">2</span>
+            <div id="in-peek">
+              <div class="pdiv"></div>
+              <svg class="ic" width="15" height="15" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 0 1 4 11.5 8.38 8.38 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5z"/></svg>
+              <svg class="ic" width="15" height="15" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2.5"/><path d="M3 6.5l9 6 9-6"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- POST-CONVERSATION — connector + pill -->
+        <div id="post-wrap">
+          <div id="post-pill">
+            <div class="flank-tag"><span>POST-CONV</span></div>
+            <svg class="ic" width="16" height="16" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg>
+            <span class="cnt">2</span>
+          </div>
+        </div>
+
+        <!-- NODE (the bright anchor) -->
+        <div id="nodecard">
+          <div class="namerow"><span class="nm">Sales</span><span class="dot"></span></div>
+          <div class="bubbles">
+            <div class="bubble" data-v="81"><div class="bcirc"><span class="v">0</span></div><span class="bl">Deals Closed</span></div>
+            <div class="bubble" data-v="72"><div class="bcirc"><span class="v">0</span></div><span class="bl">Resolution rate</span></div>
+            <div class="bubble amber" data-v="68"><div class="bcirc"><span class="v">0</span></div><span class="bl">Deflection</span></div>
+          </div>
+          <div class="abchip"><span class="adot"></span><span class="at">A/B</span><span class="ad">· 4d</span></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- right-docked post-conversation sheet (viewport-fixed in the product) -->
+    <div id="sheet"></div>
+
+    <!-- screen-record cursor -->
+    <svg id="cursor" width="22" height="22" viewBox="0 0 24 24">
+      <path d="M5 3l14 8.5-6.1 1.3L16 19.6l-2.7 1.2-3.1-6.7L5.8 18z" fill="#F2F4F8" stroke="#0A0E18" stroke-width="1.4" stroke-linejoin="round"/>
+    </svg>
+  </div>
+</div>
+
+<script src="avatars-data.js"></script>
+<script type="module">
+  import React from 'https://esm.sh/react@18.3.1';
+  import { createRoot } from 'https://esm.sh/react-dom@18.3.1/client?deps=react@18.3.1';
+  import { MeshGradient } from 'https://esm.sh/@paper-design/shaders-react@0.0.80?deps=react@18.3.1';
+  import { createFx } from './fx.js';
+
+  /* ── shader background — same family as the hero board ── */
+  createRoot(document.getElementById('shader-root')).render(
+    React.createElement(MeshGradient, {
+      speed: 0.12,
+      scale: 3.44,
+      distortion: 0.25,
+      swirl: 0.1,
+      colors: ['#07080D', '#101627', '#0B0D17', '#07080D'],
+      style: { width: '100%', height: '100%' },
+    })
+  );
+
+  /* ── palette + data (mirrors gv-v3 disclose adapters for Sales) ── */
+  const BRANDS = {
+    salesforce: { bg: '#00A1E0', img: 'assets/lg-salesforce.svg' },
+    genesys:    { bg: '#FF451A', txt: 'Ge' },
+    slack:      { bg: '#4A154B', img: 'assets/lg-slack.svg' },
+    hubspot:    { bg: '#FF7A59', img: 'assets/lg-hubspot.svg' },
+    zendesk:    { bg: '#03363D', img: 'assets/lg-zendesk.svg' },
+    whatsapp:   { bg: '#25D366', img: 'assets/lg-whatsapp.svg' },
+    gmail:      { bg: '#EA4335', img: 'assets/lg-gmail.svg' },
+    gv:         { bg: '#8B7FE0', spark: true },
+  };
+  const OPS = [
+    { name: 'Priya N.',  av: 'av-priya.svg',  state: 'alert' },
+    { name: 'Maria S.',  av: 'av-maria.svg',  state: 'active', load: 85 },
+    { name: 'James K.',  av: 'av-james.svg',  state: 'active', load: 72 },
+    { name: 'Ben T.',    av: 'av-ben.svg',    state: 'active', load: 64 },
+    { name: 'Liam O.',   av: 'av-liam.svg',   state: 'active', load: 78 },
+    { name: 'Fatima H.', av: 'av-fatima.svg', state: 'active', load: 55 },
+    { name: 'Sofia R.',  av: 'av-sofia.svg',  state: 'idle' },
+    { name: 'Yuki A.',   av: 'av-yuki.svg',   state: 'idle' },
+  ];
+  const FLOWS = [
+    { title: 'New sales enquiry', channel: 'WhatsApp', mark: 'whatsapp',
+      steps: [['hubspot', 'HubSpot', 'form submit'], ['whatsapp', 'WhatsApp', 'msg received'], ['gv', 'GV', 'auto reply']] },
+    { title: 'Inbound sales email', channel: 'Email', mark: 'gmail',
+      steps: [['gmail', 'Gmail', 'received'], ['hubspot', 'HubSpot', 'contact match'], ['gv', 'GV', 'auto-reply']] },
+  ];
+
+  const sparkSvg = '<svg width="7" height="7" viewBox="0 0 24 24"><path d="M12 3l1.9 5.6L19.5 10.5l-5.6 1.9L12 18l-1.9-5.6L4.5 10.5l5.6-1.9z" fill="#fff"/></svg>';
+  const mark = (key, size, radius, imgScale = 0.62) => {
+    const b = BRANDS[key];
+    const inner = b.spark ? sparkSvg.replace('width="7" height="7"', `width="${Math.round(size * 0.55)}" height="${Math.round(size * 0.55)}"`)
+      : b.img ? `<img src="${b.img}" style="width:${Math.round(size * imgScale)}px;height:${Math.round(size * imgScale)}px" />`
+      : `<span class="txt" style="font-size:${Math.round(size * 0.4)}px;font-weight:700;color:#fff">${b.txt}</span>`;
+    return `<div style="width:${size}px;height:${size}px;border-radius:${radius}px;background:${b.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0">${inner}</div>`;
+  };
+  const chevD = '<svg width="12" height="12" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" fill="none" stroke="#5A6275" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const chevR = '<svg class="chev" width="9" height="9" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6" fill="none" stroke="#5A6275" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  /* ── operator shelf ── */
+  function opRow(op) {
+    const dot = op.state === 'active' ? 'var(--teal)' : op.state === 'alert' ? 'var(--coral)' : 'var(--idle)';
+    const pctColor = op.state === 'active' ? 'var(--text2)' : op.state === 'alert' ? 'var(--coral)' : 'var(--text3)';
+    return `<div class="oprow">
+      <div class="av"><img src="${window.AVDATA[op.av]}" alt="" /></div>
+      <span class="onm">${op.name}</span>
+      <div class="bar" style="${op.state === 'active' ? '' : 'background:transparent'}">${op.state === 'active' ? `<i style="width:${op.load}%"></i>` : ''}</div>
+      <span class="pct" style="color:${pctColor}">${op.state === 'active' ? op.load + '%' : op.state}</span>
+      <span class="sdot" style="background:${dot}"></span>
+    </div>`;
+  }
+  const shelfHTML = `<div id="shelf">
+    <div class="panel-head">${chevD}<span class="lbl">OPERATORS</span><span class="chip">8</span><span class="sp"></span><span class="meta">71% avg load</span></div>
+    <div class="legend">
+      <div class="li"><span class="ld" style="background:var(--teal)"></span><span>5 active</span></div>
+      <div class="li"><span class="ld" style="background:var(--idle)"></span><span>2 idle</span></div>
+      <div class="li"><span class="ld" style="background:var(--coral)"></span><span>1 alert</span></div>
+    </div>
+    ${OPS.slice(0, 4).map(opRow).join('')}
+    <div id="ops-more">${OPS.slice(4).map(opRow).join('')}</div>
+    <div id="ops-toggle"><span id="ops-toggle-txt">+4 more operators</span>${chevD.replace('width="12" height="12"', 'width="12" height="12" id="ops-toggle-chev"')}</div>
+  </div>
+  <div class="rail-v" id="shelf-rail" style="height: 18px;"></div>`;
+
+  /* ── trigger flows panel ── */
+  const flowRow = (f) => `<div class="flowrow">
+    <div class="fr-top">
+      <div class="chtile">${mark(f.mark, 26, 7)}</div>
+      <div class="fr-meta"><span class="t">${f.title}</span><span class="s">${f.channel}</span></div>
+      <span class="fr-dot"></span>
+    </div>
+    <div class="steps">${f.steps.map(([key, app, action], i) => `<div class="step">${i > 0 ? chevR : ''}
+      <div class="stepcol">
+        <div class="stepchip"><span class="mark">${mark(key, 11, 3)}</span><span class="app">${app}</span></div>
+        <span class="stepcap">${action}</span>
+      </div></div>`).join('')}</div>
+  </div>`;
+  const triggerHTML = `
+    <div class="panel-head">${chevD}<span class="lbl">INBOUND</span><span class="chip">2</span><span class="sp"></span><span class="meta" style="color:var(--teal)">all healthy</span></div>
+    ${FLOWS.map(flowRow).join('')}`;
+
+  /* ── post-conversation sheet ── */
+  const sheetHTML = `
+    <div class="sh-head">
+      <div class="marks">${mark('salesforce', 26, 7)}${mark('genesys', 26, 7)}</div>
+      <div class="sh-titles"><span class="sh-t">Post-conversation</span><span class="sh-s">Post-conversation Trigger · Sales</span></div>
+      <span class="x">✕</span>
+    </div>
+    <div class="sh-div"></div>
+    <div class="sh-sec" data-s>
+      <div class="sec-h"><span>STATUS</span></div>
+      <div class="tiles">
+        <div class="stat-tile raised"><div class="tv"><b>Active</b></div><span class="tl">STATUS</span></div>
+        <div class="stat-tile"><div class="tv"><b>89</b></div><span class="tl">FIRED TODAY</span></div>
+        <div class="stat-tile"><div class="tv"><b>0.2</b><i>%</i></div><span class="tl">FAIL RATE</span></div>
+      </div>
+    </div>
+    <div class="sh-div"></div>
+    <div class="sh-sec" data-s>
+      <div class="sec-h"><span>PERFORMANCE</span></div>
+      <div class="tiles">
+        <div class="stat-tile"><div class="tv"><b>0.8</b><i>s</i></div><span class="tl">AVG LATENCY</span></div>
+        <div class="stat-tile"><div class="tv"><b>99.2</b><i>%</i></div><span class="tl">UPTIME</span></div>
+        <div class="stat-tile"><div class="tv"><b>6</b></div><span class="tl">STEPS</span></div>
+      </div>
+    </div>
+    <div class="sh-div"></div>
+    <div class="sh-sec" data-s>
+      <div class="sec-h"><span class="acc" style="background:var(--coral)"></span><span>POST-CONVERSATION</span></div>
+      <div class="brandrow">
+        <div class="brand">${mark('salesforce', 36, 9)}<span class="bn">Salesforce</span></div>
+        <div class="brand">${mark('genesys', 36, 9)}<span class="bn">Genesys</span></div>
+        <div class="brand">${mark('slack', 36, 9)}<span class="bn">Slack</span></div>
+        <div class="brand">${mark('hubspot', 36, 9)}<span class="bn">HubSpot</span></div>
+        <div class="brand">${mark('zendesk', 36, 9)}<span class="bn">Zendesk</span></div>
+      </div>
+    </div>
+    <div class="sh-div"></div>
+    <div class="sh-sec" data-s>
+      <div class="sec-h"><span class="acc" style="background:var(--teal)"></span><span>CONTACT VARIABLES</span></div>
+      <div class="varrow"><div class="vchip"><span>contact.email</span></div><span class="uses">72 uses</span></div>
+      <div class="varrow"><div class="vchip"><span>contact.outcome</span></div><span class="uses">54 uses</span></div>
+      <div class="varrow"><div class="vchip"><span>contact.sentiment</span></div><span class="uses">41 uses</span></div>
+    </div>
+    <div class="sh-foot" data-s>
+      <div class="btn ghost">Pause</div>
+      <div class="btn primary">Configure</div>
+    </div>`;
+
+  document.getElementById('trigger-panel').innerHTML = triggerHTML;
+  document.getElementById('sheet').innerHTML = sheetHTML;
+
+  // warm every avatar + logo so hidden-section images paint instantly
+  for (const op of OPS) { const i = new Image(); i.src = 'assets/' + op.av; i.decode?.().catch(() => {}); }
+  for (const k in BRANDS) { if (BRANDS[k].img) { const i = new Image(); i.src = BRANDS[k].img; i.decode?.().catch(() => {}); } }
+
+  /* ── stage scaling ── */
+  const stage = document.getElementById('stage');
+  function fit() {
+    const s = Math.min(innerWidth / 1200, innerHeight / 1500);
+    stage.style.transform = `translate(-50%, -50%) scale(${s})`;
+  }
+  addEventListener('resize', fit); fit();
+
+  /* ── fx layer: soft node rim + data strands in/out ── */
+  const fx = createFx(document.getElementById('fxw'));
+  const K = 1200; // stage width
+  function stageRect(el) {
+    const s = stage.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    const k = K / s.width;
+    return { x: (r.left - s.left) * k, y: (r.top - s.top) * k, w: r.width * k, h: r.height * k };
+  }
+
+  const nodeEl = document.getElementById('nodecard');
+  const inPillEl = document.getElementById('inbound-pill');
+  const postPillEl = document.getElementById('post-pill');
+
+  // exp-approach animated values
+  const V = { glow: { v: 0, t: 0 }, revA: { v: 0, t: 0 }, revB: { v: 0, t: 0 } };
+  const setT = (k, t) => { V[k].t = t; };
+
+  function draw(tms) {
+    const t = tms / 1000;
+    for (const k in V) V[k].v += (V[k].t - V[k].v) * 0.045;
+
+    const nr = stageRect(nodeEl);
+    const caps = [nr.x + nr.w / 2, nr.y + nr.h / 2, nr.w / 2, nr.h / 2,
+                  -9999, -9999, 1, 1, -9999, -9999, 1, 1, -9999, -9999, 1, 1];
+    // warning-state node: amber rim (deflection + inbound trigger warnings)
+    const cols = [0.91, 0.71, 0.345, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    const urgs = [0.45, 0, 0, 0];
+    fx.setScene({ caps, cols, urgs });
+
+    const ir = stageRect(inPillEl);
+    const pr = stageRect(postPillEl);
+    const aIn  = { x: -30, y: ir.y + ir.h / 2 };
+    const bIn  = { x: ir.x - 3, y: ir.y + ir.h / 2 };
+    const aOut = { x: pr.x + pr.w + 3, y: pr.y + pr.h / 2 };
+    const bOut = { x: 1230, y: pr.y + pr.h / 2 };
+    const mk = (a, b, seed) => {
+      const len = Math.hypot(b.x - a.x, b.y - a.y);
+      const L = Math.min(Math.max(len * 0.35, 60), 220);
+      const p1 = { x: a.x + L + Math.sin(t * 0.71 + seed * 2) * 5,
+                   y: a.y + Math.sin(t * 0.62 + seed) * 9 + Math.sin(t * 1.27 + seed * 2) * 4 };
+      const p2 = { x: b.x - L + Math.sin(t * 0.66 + 1.3 + seed) * 5,
+                   y: b.y + Math.sin(t * 0.54 + 1.7 + seed) * 10 + Math.sin(t * 1.09 + 2 + seed) * 3 };
+      return { p0: a, p1, p2, p3: b, hov: 0 };
+    };
+    fx.render({
+      t,
+      strands: [mk(aIn, bIn, 0), mk(aOut, bOut, 2.7)],
+      revA: V.revA.v,
+      revB: V.revB.v,
+      glowM: V.glow.v,
+    });
+    requestAnimationFrame(draw);
+  }
+
+  /* ── cursor ── */
+  const world = document.getElementById('world');
+  const camera = document.getElementById('camera');
+  const cursor = document.getElementById('cursor');
+  let cx = 400, cy = 930;
+  function worldPos(el, ox = 0.5, oy = 0.5) {
+    const wr = world.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    const k = 800 / wr.width;
+    return { x: (r.left - wr.left + r.width * ox) * k, y: (r.top - wr.top + r.height * oy) * k };
+  }
+  function placeCursor() { cursor.style.transform = `translate(${cx}px, ${cy}px)`; }
+  placeCursor();
+
+  const easeIO = (k) => k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+  function moveCursor(target, dur) {
+    return new Promise((res) => {
+      const x0 = cx, y0 = cy, t0 = performance.now();
+      (function tick(now) {
+        const k = Math.min((now - t0) / dur, 1);
+        const e = easeIO(k);
+        // slight arc so the travel feels hand-driven
+        const arc = Math.sin(k * Math.PI) * Math.min(26, Math.hypot(target.x - x0, target.y - y0) * 0.06);
+        cx = x0 + (target.x - x0) * e;
+        cy = y0 + (target.y - y0) * e - arc;
+        placeCursor();
+        if (k < 1) requestAnimationFrame(tick); else res();
+      })(t0);
+    });
+  }
+  function clickRipple() {
+    cursor.animate([{ transform: `translate(${cx}px, ${cy}px) scale(1)` },
+                    { transform: `translate(${cx}px, ${cy}px) scale(0.82)` },
+                    { transform: `translate(${cx}px, ${cy}px) scale(1)` }],
+                   { duration: 260, easing: 'ease-out' });
+    const r = document.createElement('div');
+    r.className = 'ripple';
+    r.style.left = cx + 3 + 'px'; r.style.top = cy + 3 + 'px';
+    world.appendChild(r);
+    r.animate([{ transform: 'translate(-50%,-50%) scale(0.25)', opacity: 0.9 },
+               { transform: 'translate(-50%,-50%) scale(1.15)', opacity: 0 }],
+              { duration: 480, easing: 'cubic-bezier(0.16,1,0.3,1)', fill: 'forwards' })
+      .onfinish = () => r.remove();
+  }
+
+  /* ── motion helpers (springs ≈ the framer variants in DiscloseNode.tsx) ── */
+  const SPRING = 'cubic-bezier(0.3, 1.28, 0.42, 1)';   // ≈ spring(260, 24)
+  const ITEM   = 'cubic-bezier(0.26, 1.2, 0.42, 1)';   // ≈ spring(300, 26)
+  const EXPO   = 'cubic-bezier(0.16, 1, 0.3, 1)';
+
+  function enterPanel(el, from, stagger = 0.07, delay = 0.06) {
+    el.style.display = 'flex';
+    el.animate([{ opacity: 0, transform: from }, { opacity: 1, transform: 'none' }],
+               { duration: 620, easing: SPRING, fill: 'both' });
+    [...el.querySelectorAll(':scope > *')].forEach((c, i) => {
+      c.animate([{ opacity: 0, transform: 'translateY(8px) scale(0.96)' }, { opacity: 1, transform: 'none' }],
+                { duration: 520, delay: (delay + i * stagger) * 1000, easing: ITEM, fill: 'both' });
+    });
+  }
+  function exitPanel(el, to) {
+    const a = el.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: to }],
+                         { duration: 160, easing: 'ease', fill: 'forwards' });
+    return a.finished.then(() => { el.style.display = 'none'; });
+  }
+
+  const $ = (id) => document.getElementById(id);
+  const dim = (el, o) => el.animate([{ opacity: getComputedStyle(el).opacity }, { opacity: o }],
+                                    { duration: 350, easing: 'ease', fill: 'forwards' });
+
+  function countUp(el, target, dur, delay) {
+    const t0 = performance.now() + delay;
+    (function tick(now) {
+      const k = Math.min(Math.max((now - t0) / dur, 0), 1);
+      el.textContent = Math.round(target * (1 - Math.pow(1 - k, 3)));
+      if (k < 1) requestAnimationFrame(tick);
+    })(performance.now());
+  }
+
+  /* ── choreography ── */
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  async function film() {
+    /* 1 · assemble (the hero language: surface, extend, count) */
+    setT('glow', 1);
+    const node = $('nodecard');
+    node.style.opacity = '1';
+    node.animate([{ transform: 'scale(0.93)' }, { transform: 'scale(1)' }], { duration: 560, easing: EXPO, fill: 'both' });
+    node.querySelectorAll('.bubble').forEach((b, i) => {
+      b.animate([{ opacity: 0, transform: 'translateY(8px) scale(0.94)' }, { opacity: 1, transform: 'none' }],
+                { duration: 480, delay: 160 + i * 90, easing: ITEM, fill: 'both' });
+      countUp(b.querySelector('.v'), +b.dataset.v, 850, 450 + i * 90);
+    });
+
+    await sleep(300);
+    $('ops-rail').animate([{ height: '0px' }, { height: '14px' }], { duration: 360, easing: EXPO, fill: 'both' });
+    $('ops-pill').style.opacity = '1';
+    $('ops-pill').animate([{ transform: 'translateY(9px)' }, { transform: 'none' }], { duration: 460, easing: EXPO, fill: 'both' });
+    ['breadcrumb', 'zoomtag'].forEach((id, i) => {
+      $(id).animate([{ opacity: 0, transform: 'translateY(-8px)' }, { opacity: 1, transform: 'none' }],
+                    { duration: 500, delay: 200 + i * 90, easing: EXPO, fill: 'both' });
+    });
+
+    await sleep(460);
+    $('inbound-pill').style.opacity = '1';
+    $('inbound-pill').animate([{ transform: 'translateX(9px) scale(0.92)' }, { transform: 'none' }], { duration: 460, easing: SPRING, fill: 'both' });
+    $('post-pill').style.opacity = '1';
+    $('post-pill').animate([{ transform: 'translateX(-9px) scale(0.92)' }, { transform: 'none' }], { duration: 460, easing: SPRING, fill: 'both' });
+
+    await sleep(700);
+    setT('revA', 1); setT('revB', 1);   // data starts flowing across the flanks
+
+    /* 2 · operators disclose above */
+    await sleep(1400);
+    cursor.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 350, fill: 'both' });
+    await moveCursor(worldPos($('ops-pill')), 900);
+    $('ops-pill').classList.add('hot');
+    await sleep(180);
+    clickRipple();
+    await sleep(120);
+    $('shelf-slot').innerHTML = shelfHTML;
+    $('shelf-slot').querySelectorAll('img').forEach((i) => i.decode?.().catch(() => {}));
+    enterPanel($('shelf-slot').querySelector('#shelf'), 'translateY(16px) scale(0.94)', 0.05, 0.05);
+    dim($('inbound-wrap'), 0.3); dim($('post-wrap'), 0.3); dim(node, 0.92);
+
+    /* “+4 more operators” — the shelf discloses the rest */
+    await sleep(1900);
+    await moveCursor(worldPos($('ops-toggle')), 750);
+    clickRipple();
+    $('ops-toggle-txt').textContent = 'Show fewer';
+    $('shelf-slot').querySelector('#ops-toggle svg').style.transform = 'rotate(180deg)';
+    camera.style.transform = 'translate(0px, 120px)';   // tilt down so the tall shelf fits
+    // plain rAF height tween — a WAAPI height animation (even committed +
+    // cancelled) leaves Chrome refusing to raster imgs/nested clips revealed
+    // inside the expanding container
+    const more = $('ops-more');
+    const target = more.scrollHeight;
+    await new Promise((res) => {
+      const t0 = performance.now();
+      (function tick(now) {
+        const k = Math.min((now - t0) / 520, 1);
+        const e = 1 - Math.pow(1 - k, 3);
+        more.style.height = (target * e).toFixed(1) + 'px';
+        if (k < 1) requestAnimationFrame(tick); else { more.style.height = 'auto'; res(); }
+      })(t0);
+    });
+    /* 3 · inbound flank: peek, then Trigger Flows panel in place */
+    await sleep(2100);
+    await moveCursor(worldPos($('inbound-pill'), 0.5, 0.32), 950);
+    $('ops-pill').classList.remove('hot');
+    const peek = $('in-peek');
+    peek.style.height = '52px'; peek.style.opacity = '1';   // hover peek: channels
+    await sleep(650);
+    clickRipple();
+    // shelf away, trigger panel blooms leftward; camera gives it room
+    exitPanel($('shelf-slot').querySelector('#shelf'), 'translateY(12px) scale(0.95)');
+    setTimeout(() => { $('shelf-slot').innerHTML = ''; }, 180);
+    dim($('ops-wrap'), 0.3); dim($('inbound-wrap'), 1); dim(node, 0.5);
+    peek.style.height = '0px'; peek.style.opacity = '0';
+    await sleep(140);
+    $('inbound-pill').style.display = 'none';
+    camera.style.transform = 'translate(130px, 0px)';
+    setT('revA', 0);
+    enterPanel($('trigger-panel'), 'translateX(18px) scale(0.92)');
+
+    /* 4 · post-conversation: right-docked sheet with the system marks */
+    await sleep(3600);
+    await moveCursor(worldPos($('post-pill')), 1050);
+    $('post-pill').classList.add('hot');
+    await sleep(180);
+    clickRipple();
+    await exitPanel($('trigger-panel'), 'translateX(14px) scale(0.94)');
+    $('inbound-pill').style.display = '';
+    dim($('inbound-wrap'), 0.3);
+    camera.style.transform = 'translate(-200px, 0px)';
+    setT('revB', 0);
+    const sheet = $('sheet');
+    sheet.animate([{ transform: 'translateX(103%)' }, { transform: 'translateX(0%)' }], { duration: 640, easing: SPRING, fill: 'forwards' });
+    [...sheet.querySelectorAll('[data-s], .sh-head')].forEach((s, i) => {
+      s.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }],
+                { duration: 480, delay: 110 + i * 70, easing: ITEM, fill: 'both' });
+    });
+    $('post-pill').classList.remove('hot');
+
+    /* 5 · close, settle back to the quiet node */
+    await sleep(3800);
+    await moveCursor(worldPos(sheet.querySelector('.x')), 900);
+    clickRipple();
+    sheet.animate([{ transform: 'translateX(0%)' }, { transform: 'translateX(103%)' }], { duration: 480, easing: 'cubic-bezier(0.4, 0, 0.6, 1)', fill: 'forwards' });
+    camera.style.transform = 'translate(0px, 0px)';
+    dim($('inbound-wrap'), 1); dim($('post-wrap'), 1); dim($('ops-wrap'), 1); dim(node, 1);
+    setT('revA', 1); setT('revB', 1);
+    await moveCursor({ x: 400, y: 930 }, 1100);
+    cursor.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500, delay: 300, fill: 'both' });
+
+    /* rest beat — glow breathing, strands flowing, then the loop restarts */
+  }
+
+  document.fonts.ready.then(() => {
+    requestAnimationFrame(draw);
+    if (new URLSearchParams(location.search).has('armed')) {
+      window.__go = () => setTimeout(film, 200);   // recorder starts the take
+      window.__ready = true;
+    } else {
+      setTimeout(film, 500);
+    }
+  });
+</script>
+</body>
+</html>

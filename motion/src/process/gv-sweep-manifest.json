@@ -1,0 +1,34 @@
+{
+  "pairs": [
+    {
+      "label": "Dashboard",
+      "asis": "gv-sweep/01a-asis-dashboard.png",
+      "aurora": "gv-sweep/01b-aurora-dashboard.png"
+    },
+    {
+      "label": "Agents",
+      "asis": "gv-sweep/02a-asis-agents.png",
+      "aurora": "gv-sweep/02b-aurora-agents.png"
+    },
+    {
+      "label": "Graph Editor",
+      "asis": "gv-sweep/03a-asis-graph-editor.png",
+      "aurora": "gv-sweep/03b-aurora-graph-editor.png"
+    },
+    {
+      "label": "Live Monitor",
+      "asis": "gv-sweep/04a-asis-live-monitor.png",
+      "aurora": "gv-sweep/04b-aurora-live-monitor.png"
+    },
+    {
+      "label": "Governance",
+      "asis": "gv-sweep/05a-asis-governance.png",
+      "aurora": "gv-sweep/05b-aurora-governance.png"
+    },
+    {
+      "label": "Call Dialer",
+      "asis": "gv-sweep/06a-asis-call-dialer.png",
+      "aurora": "gv-sweep/06b-aurora-call-dialer.png"
+    }
+  ]
+}
