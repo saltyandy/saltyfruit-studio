@@ -323,7 +323,7 @@ body.menu-open .menu-panel {
    touch-action: pan-y keeps vertical swipes scrolling the page. */
 
 .compare {
-  --reveal: 42%;
+  --reveal: 25%;
   /* both boards are exported at this exact ratio — no cover-crop */
   aspect-ratio: 1880 / 1080;
   cursor: ew-resize;
