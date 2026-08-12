@@ -85,7 +85,7 @@ const compare = document.querySelector(".compare");
 
 if (compare) {
   const setReveal = (pct) => {
-    const clamped = Math.min(96, Math.max(4, pct));
+    const clamped = Math.min(100, Math.max(0, pct));
     compare.style.setProperty("--reveal", clamped.toFixed(2) + "%");
     compare.setAttribute("aria-valuenow", String(Math.round(clamped)));
   };
