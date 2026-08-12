@@ -98,13 +98,23 @@
         </div>
       </div>
 
-      <!-- 08 · the As-Is → Aurora platform sweep: six screens of the old
-           product cutting to their Aurora twins (Dashboard, Agents, Graph
-           Editor, Live Monitor, Governance, Call Dialer). Boards from the
-           Paper page "Platform Redesign — Aurora"; rendered via
-           `npm run render:gv-sweep` (GvSweepReel, 0.9s as-is → 1.5s aurora). -->
-      <div class="media r-16x9">
-        <video src="assets/getvocal/aurora-sweep.mp4" autoplay muted loop playsinline preload="metadata"></video>
+      <!-- 08 · before/after — the improvement loop, then and now. Drag the
+           handle: the as-is graph editor with the improvement panel open
+           (light, full chrome) against the Aurora Improvement Studio vision
+           board. Paper boards "07 As-Is — Improvement Panel · Full Screen"
+           (composed from the as-is graph editor + panel) + "V1 Vision —
+           Improvement Studio", Fleet UI page "Platform Redesign — Aurora",
+           exported @2x at matching 1880/1080 ratio. -->
+      <div class="media r-16x9 compare" role="slider" tabindex="0" aria-label="Improvement studio, before and after — drag to compare" aria-valuemin="0" aria-valuemax="100" aria-valuenow="42">
+        <img class="compare-after" src="assets/getvocal/improvement-aurora.webp" alt="Aurora Improvement Studio — ranked caller drop-offs, a proposed fix with projected recovery, one-click retrain" draggable="false" />
+        <img class="compare-before" src="assets/getvocal/improvement-asis.webp" alt="As-is graph editor with the improvement panel open — flow nodes, drop-rate badge, unmapped speaker responses" draggable="false" />
+        <div class="compare-handle">
+          <span class="compare-grip">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3.5 1L0.5 5L3.5 9" stroke="currentColor" stroke-width="1.2"/><path d="M6.5 1L9.5 5L6.5 9" stroke="currentColor" stroke-width="1.2"/></svg>
+          </span>
+        </div>
+        <span class="compare-tag compare-tag-before">AS-IS</span>
+        <span class="compare-tag compare-tag-after">AURORA</span>
       </div>
 
       <div class="duo">

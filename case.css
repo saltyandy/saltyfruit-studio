@@ -317,6 +317,79 @@ body.menu-open .menu-panel {
   overflow: clip;
 }
 
+/* ---------- before/after compare (slot 08) ----------
+   Two stacked screens; the as-is layer is clipped to --reveal and a
+   pointer-driven handle wipes between them. No scroll hijack —
+   touch-action: pan-y keeps vertical swipes scrolling the page. */
+
+.compare {
+  --reveal: 42%;
+  /* both boards are exported at this exact ratio — no cover-crop */
+  aspect-ratio: 1880 / 1080;
+  cursor: ew-resize;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.compare img {
+  position: absolute;
+  inset: 0;
+}
+
+.compare .compare-before {
+  clip-path: inset(0 calc(100% - var(--reveal)) 0 0);
+}
+
+.compare-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--reveal);
+  width: 2px;
+  transform: translateX(-1px);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1px rgba(7, 8, 13, 0.35);
+}
+
+.compare-grip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  color: #1e1a38;
+  box-shadow: 0 2px 12px rgba(7, 8, 13, 0.35);
+}
+
+.compare-tag {
+  position: absolute;
+  top: 14px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  padding: 5px 9px;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.compare-tag-before {
+  left: 14px;
+  color: #f4efe3;
+  background: rgba(30, 26, 56, 0.75);
+}
+
+.compare-tag-after {
+  right: 14px;
+  color: #1e1a38;
+  background: rgba(244, 239, 227, 0.9);
+}
+
 /* ---------- orb session-flow diagram (slot 01) ---------- */
 
 /* Fixed 646×807 stage scaled to the slot width so the diagram stays

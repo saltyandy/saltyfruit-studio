@@ -78,3 +78,34 @@ if (caseFilms.length) {
   );
   caseFilms.forEach((v) => nudge.observe(v));
 }
+
+// Before/after compare: drag (or arrow-key) the handle to wipe between the
+// as-is and Aurora screens. --reveal drives both the clip and the handle.
+const compare = document.querySelector(".compare");
+
+if (compare) {
+  const setReveal = (pct) => {
+    const clamped = Math.min(96, Math.max(4, pct));
+    compare.style.setProperty("--reveal", clamped.toFixed(2) + "%");
+    compare.setAttribute("aria-valuenow", String(Math.round(clamped)));
+  };
+  const revealAt = (clientX) => {
+    const r = compare.getBoundingClientRect();
+    setReveal(((clientX - r.left) / r.width) * 100);
+  };
+
+  compare.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    compare.setPointerCapture(e.pointerId);
+    revealAt(e.clientX);
+  });
+  compare.addEventListener("pointermove", (e) => {
+    if (e.buttons) revealAt(e.clientX);
+  });
+  compare.addEventListener("keydown", (e) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    e.preventDefault();
+    const now = parseFloat(getComputedStyle(compare).getPropertyValue("--reveal"));
+    setReveal(now + (e.key === "ArrowRight" ? 4 : -4));
+  });
+}
