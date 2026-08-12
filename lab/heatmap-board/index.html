@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Heatmap board — capture rig</title>
+  <style>
+    * { margin: 0; }
+    body { background: #333; }
+    /* board = mock frame "Duo 07–08" right tile: 646×807 black ground,
+       Heatmap element 554×693 centered (46px sides, 57px top/bottom) */
+    #board { width: 554px; height: 693px; background: #000000; display: grid; place-items: center; }
+  </style>
+</head>
+<body>
+  <div id="board"></div>
+  <script type="module">
+    import React from 'https://esm.sh/react@18.3.1';
+    import { createRoot } from 'https://esm.sh/react-dom@18.3.1/client?deps=react@18.3.1';
+    import { Heatmap } from 'https://esm.sh/@paper-design/shaders-react@0.0.80?deps=react@18.3.1';
+
+    // Exact props from the Paper export (node 1Q3-0), speed 0 to freeze
+    // the shader at the mock's frame.
+    createRoot(document.getElementById('board')).render(
+      React.createElement(Heatmap, {
+        speed: 1,
+        contour: 0.392,
+        angle: -108,
+        noise: 0.22,
+        innerGlow: 0.5,
+        outerGlow: 0.25,
+        scale: 0.68,
+        frame: 1594.6000000117347,
+        image: './capsules.svg',
+        colors: ['#010101', '#1F3BA2', '#2F63E7', '#6BD7FF', '#FFE679', '#FF991E', '#FF4C00'],
+        colorBack: '#00000000',
+        style: { backgroundColor: '#000000', width: '554px', height: '693px' },
+      })
+    );
+  </script>
+</body>
+</html>
