@@ -1,3 +1,11 @@
+@font-face {
+  font-family: "Pretendard";
+  src: url("assets/fonts/PretendardStdVariable.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --paper: #faf7f2;
   --ink: #1a1815;
@@ -5,8 +13,8 @@
   --line: #e4ddd2;
   --accent: #e4572e;
 
-  --font-display: "Instrument Serif", Georgia, serif;
-  --font-body: "Inter", -apple-system, system-ui, sans-serif;
+  --font-display: "Pretendard", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-body: "Pretendard", -apple-system, system-ui, sans-serif;
 
   --space-gutter: clamp(20px, 5vw, 64px);
 }
@@ -53,7 +61,7 @@ a {
 .wordmark {
   font-family: var(--font-display);
   font-size: 22px;
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
 }
 
 .site-header nav {
@@ -74,35 +82,47 @@ a {
   color: var(--accent);
 }
 
-/* ---------- intro ---------- */
+/* ---------- home ---------- */
 
-.intro {
-  padding: clamp(96px, 18vh, 200px) var(--space-gutter) clamp(80px, 14vh, 160px);
-  max-width: 1100px;
+/* Landing runs stark white/black; case pages keep their own palettes. */
+.home {
+  --paper: #ffffff;
+  --ink: #111111;
+  --ink-soft: #757575;
+  --line: #e6e6e6;
+  --accent: #111111;
 }
 
-.intro h1 {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: clamp(38px, 6vw, 76px);
-  line-height: 1.12;
-  letter-spacing: -0.01em;
+.home .site-header {
+  align-items: center;
 }
 
-.intro h1 em {
-  font-style: italic;
-  color: var(--accent);
+/* landing footer: one quiet row, no display type */
+.home .site-footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px var(--space-gutter) 36px;
 }
 
-.intro-note {
-  margin-top: 40px;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--ink-soft);
+.home .footer-email {
+  font-family: var(--font-body);
+  font-size: 15px;
 }
 
-/* ---------- work ---------- */
+.home .footer-fine {
+  margin-top: 0;
+}
+
+.home main {
+  max-width: 1520px;
+  margin: 0 auto;
+}
+
+main > section:first-child {
+  padding-top: clamp(48px, 9vh, 112px);
+}
 
 .section-label {
   font-size: 13px;
@@ -113,59 +133,144 @@ a {
   margin-bottom: 24px;
 }
 
-.work {
-  padding: 0 var(--space-gutter) clamp(80px, 14vh, 160px);
+/* ---------- landing entrance ---------- */
+
+/* Boot loader: blank paper with a hairline bar that fills as each tile's
+   film arrives. Hidden until site.js adds .home-enter, so a no-script load
+   never sees it; .loaded fades the whole sheet away. */
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper);
 }
 
-.project {
+.home-enter .loader {
+  display: flex;
+}
+
+.loader-track {
+  width: 148px;
+  height: 2px;
+  background: var(--line);
+}
+
+.loader-fill {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s ease;
+}
+
+.loaded .loader {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.4s ease, visibility 0s linear 0.4s;
+}
+
+/* site.js gates the sequence behind .home-enter so a no-script load shows
+   everything immediately. The about text pops up first; the feed tiles
+   cascade in (.is-in, staggered) once their media has loaded. */
+.home-enter .about p {
+  opacity: 0;
+  transform: translateY(16px) scale(0.99);
+}
+
+.home-enter.text-in .about p {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.55s ease, transform 0.6s cubic-bezier(0.34, 1.45, 0.64, 1);
+}
+
+.home-enter .feed .piece {
+  opacity: 0;
+  transform: translateY(26px);
+}
+
+.home-enter .feed .piece.is-in {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.65s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-enter .loader {
+    display: none;
+  }
+
+  .home-enter .about p,
+  .home-enter .feed .piece {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ---------- work feed ---------- */
+
+.feed {
   display: grid;
-  grid-template-columns: 56px 1fr auto;
-  align-items: baseline;
-  gap: 24px;
-  padding: 28px 0;
-  border-top: 1px solid var(--line);
-  transition: padding-left 0.2s ease;
+  gap: clamp(56px, 9vh, 112px);
+  padding: 0 var(--space-gutter) clamp(64px, 10vh, 120px);
 }
 
-.project:last-of-type {
-  border-bottom: 1px solid var(--line);
+.piece {
+  display: block;
 }
 
-.project:hover {
-  padding-left: 12px;
+.piece-media {
+  border-radius: 10px;
+  overflow: hidden;
 }
 
-.project:hover .project-name {
-  color: var(--accent);
+.piece-media img,
+.piece-media video {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
-.project-index {
-  font-size: 13px;
+.piece-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 14px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.piece-name {
+  font-weight: 500;
+}
+
+.piece:hover .piece-name {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.piece-meta {
   color: var(--ink-soft);
-  font-variant-numeric: tabular-nums;
 }
 
-.project-name {
-  font-family: var(--font-display);
-  font-size: clamp(26px, 3.4vw, 44px);
-  line-height: 1.1;
-  transition: color 0.15s ease;
+.archive-section {
+  padding: 0 var(--space-gutter) clamp(64px, 10vh, 120px);
 }
 
-.project-meta {
-  font-size: 13px;
+.archive-note {
+  font-size: 14px;
   color: var(--ink-soft);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  margin-bottom: 24px;
 }
 
-/* Archive: same list language as Selected work, one register quieter. */
-.archive .project-name {
-  font-size: clamp(20px, 2.4vw, 30px);
-}
-
-.archive .project {
-  padding: 20px 0;
+.archive-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(20px, 3vw, 40px);
 }
 
 /* ---------- about ---------- */
@@ -192,6 +297,7 @@ a {
   font-family: var(--font-display);
   font-size: clamp(28px, 4.5vw, 56px);
   line-height: 1.1;
+  letter-spacing: -0.015em;
   transition: color 0.15s ease;
 }
 
@@ -208,11 +314,12 @@ a {
 /* ---------- small screens ---------- */
 
 @media (max-width: 560px) {
-  .project {
-    grid-template-columns: 40px 1fr;
+  .archive-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
   }
 
-  .project-meta {
-    grid-column: 2;
+  .piece-caption {
+    font-size: 14px;
   }
 }

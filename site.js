@@ -31,6 +31,50 @@ document.addEventListener("keydown", (e) => {
   else if (body.classList.contains("sheet-open")) body.classList.remove("sheet-open");
 });
 
+// Landing entrance: a hairline loader bar fills as each tile's film gets
+// ready, then the sheet fades, the about text pops in and the feed cascades.
+if (body.classList.contains("home")) {
+  body.classList.add("home-enter");
+
+  const fill = document.querySelector(".loader-fill");
+  const pieces = [...document.querySelectorAll(".feed .piece")];
+
+  let ready = 0;
+  const advance = () => {
+    ready += 1;
+    if (fill) fill.style.transform = `scaleX(${ready / pieces.length})`;
+  };
+
+  const mediaReady = (piece) =>
+    new Promise((done) => {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        advance();
+        done();
+      };
+      const film = piece.querySelector("video");
+      if (!film || film.readyState >= 2) return finish();
+      film.addEventListener("loadeddata", finish, { once: true });
+      setTimeout(finish, 2500); // don't hold the reveal hostage to a slow film
+    });
+
+  Promise.all(pieces.map(mediaReady)).then(() => {
+    // give the bar a beat of life even on a warm cache
+    const wait = Math.max(0, 850 - performance.now());
+    setTimeout(() => {
+      body.classList.add("loaded");
+      setTimeout(() => body.classList.add("text-in"), 200);
+      setTimeout(() => {
+        pieces.forEach((p, i) =>
+          setTimeout(() => p.classList.add("is-in"), i * 130)
+        );
+      }, 550);
+    }, wait);
+  });
+}
+
 // Golf Guru live demo: scale the fixed 900×1125 iframe to the slot so the
 // app keeps its desktop phone frame at tile sizes.
 const ggPhone = document.querySelector(".gg-phone");

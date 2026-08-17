@@ -6,82 +6,140 @@
   <title>Salty Fruit Studio — Product Design</title>
   <meta name="description" content="Salty Fruit is the independent design studio of Andy — product design, prototyping, and thoughtful software." />
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="case.css" />
 </head>
-<body>
+<body class="home">
+
+  <div class="loader" aria-hidden="true">
+    <span class="loader-track"><span class="loader-fill"></span></span>
+  </div>
 
   <header class="site-header">
-    <a class="wordmark" href="/">Salty&nbsp;Fruit</a>
-    <nav>
-      <a href="#work">Work</a>
-      <a href="about.html">About</a>
-      <a href="mailto:hello@saltyfruit.studio">Contact</a>
-    </nav>
+    <a class="wordmark" href="/">SF</a>
+    <button class="menu-toggle" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
   </header>
 
   <main>
-    <section class="intro">
-      <h1>
-        A small studio making <em>software feel considered</em> — product design, prototyping, and the details in between.
-      </h1>
-      <p class="intro-note">Currently taking on select projects · Based on Earth, works everywhere</p>
-    </section>
-
-    <section id="work" class="work">
-      <p class="section-label">Selected work</p>
-
-      <a class="project" href="project.html">
-        <span class="project-index">01</span>
-        <span class="project-name">The Orb</span>
-        <span class="project-meta">Product design · Prototyping · 2026</span>
-      </a>
-
-      <a class="project" href="getvocal.html">
-        <span class="project-index">02</span>
-        <span class="project-name">GetVocal V3</span>
-        <span class="project-meta">Product design · Design systems · 2026</span>
-      </a>
-
-      <a class="project" href="golf-guru.html">
-        <span class="project-index">03</span>
-        <span class="project-name">Golf Guru</span>
-        <span class="project-meta">Brand identity · App design · 2024</span>
-      </a>
-    </section>
-
-    <section id="archive" class="work archive">
-      <p class="section-label">Archive</p>
-
-      <a class="project" href="ocean-cleanup.html">
-        <span class="project-index">A1</span>
-        <span class="project-name">The Ocean Cleanup</span>
-        <span class="project-meta">Concept · Data visualization · 2024</span>
-      </a>
-
-      <a class="project" href="matt-maltese.html">
-        <span class="project-index">A2</span>
-        <span class="project-name">Matt Maltese</span>
-        <span class="project-meta">Creative direction · Album artwork · 2024</span>
-      </a>
-    </section>
-
     <section id="about" class="about">
-      <p class="section-label">About</p>
       <p>
-        Salty Fruit is the independent practice of Andy — a product designer who builds.
-        The work spans early-stage product definition, interface design, and shipping
-        real prototypes, with a bias toward simplicity and craft.
+        Salty Fruit is the independent practice of Andy Renton — building
+        products and brands that fit new ways of working. Super comfortable in
+        early-stage / scale-up product definition and interface design.
       </p>
     </section>
+
+    <section id="work" class="feed">
+      <a class="piece" href="project.html">
+        <div class="piece-media">
+          <video src="assets/video/orb-hero.mp4" poster="assets/video/orb-hero-poster.jpg" autoplay muted loop playsinline preload="metadata"></video>
+        </div>
+        <div class="piece-caption">
+          <span class="piece-name">Orb</span>
+          <span class="piece-meta">Product design, 2026</span>
+        </div>
+      </a>
+
+      <a class="piece" href="getvocal.html">
+        <div class="piece-media">
+          <video poster="assets/getvocal/hero-poster.jpg" autoplay muted loop playsinline preload="metadata">
+            <source src="assets/getvocal/hero-fleet-v3.mp4" type="video/mp4" />
+            <source src="assets/getvocal/hero-fleet-v3.webm" type="video/webm" />
+          </video>
+        </div>
+        <div class="piece-caption">
+          <span class="piece-name">GetVocal AI</span>
+          <span class="piece-meta">Product design, 2026</span>
+        </div>
+      </a>
+
+      <a class="piece" href="perq.html">
+        <div class="piece-media">
+          <video poster="assets/perq/landing-tour-poster.jpg" autoplay muted loop playsinline preload="metadata">
+            <source src="assets/perq/landing-tour.mp4" type="video/mp4" />
+            <source src="assets/perq/landing-tour.webm" type="video/webm" />
+          </video>
+        </div>
+        <div class="piece-caption">
+          <span class="piece-name">PERQ</span>
+          <span class="piece-meta">Brand &amp; product design, 2026</span>
+        </div>
+      </a>
+
+      <a class="piece" href="golf-guru.html">
+        <div class="piece-media">
+          <video src="assets/golf-guru/splash.mp4" poster="assets/golf-guru/header.jpg" autoplay muted loop playsinline preload="metadata"></video>
+        </div>
+        <div class="piece-caption">
+          <span class="piece-name">Golf Guru</span>
+          <span class="piece-meta">Brand identity, 2024</span>
+        </div>
+      </a>
+    </section>
+
+    <section id="archive" class="archive-section">
+      <p class="archive-note">Archive</p>
+      <div class="archive-grid">
+        <a class="piece" href="ocean-cleanup.html">
+          <div class="piece-media">
+            <img src="assets/ocean-cleanup/hero.jpg" alt="" loading="lazy" />
+          </div>
+          <div class="piece-caption">
+            <span class="piece-name">The Ocean Cleanup</span>
+            <span class="piece-meta">Concept, 2024</span>
+          </div>
+        </a>
+
+        <a class="piece" href="matt-maltese.html">
+          <div class="piece-media">
+            <img src="assets/matt-maltese/hero.jpg" alt="" loading="lazy" />
+          </div>
+          <div class="piece-caption">
+            <span class="piece-name">Matt Maltese</span>
+            <span class="piece-meta">Creative direction, 2024</span>
+          </div>
+        </a>
+
+        <a class="piece" href="lore.html">
+          <div class="piece-media">
+            <img src="assets/lore/hero.jpg" alt="" loading="lazy" />
+          </div>
+          <div class="piece-caption">
+            <span class="piece-name">Last Recordings On Earth</span>
+            <span class="piece-meta">Brand identity, 2024</span>
+          </div>
+        </a>
+      </div>
+    </section>
+
   </main>
 
   <footer class="site-footer">
-    <a class="footer-email" href="mailto:hello@saltyfruit.studio">hello@saltyfruit.studio</a>
     <p class="footer-fine">© 2026 Salty Fruit Studio</p>
   </footer>
 
+  <!-- menu -->
+  <div class="menu-backdrop"></div>
+  <aside class="menu-panel" role="dialog" aria-modal="true" aria-label="Menu">
+    <button class="menu-close" aria-label="Close menu">✕</button>
+
+    <ul class="menu-primary">
+      <li><a href="#work">Work</a></li>
+      <li><a href="index.html">Home</a></li>
+    </ul>
+
+    <a class="menu-email" href="mailto:andy@saltyfruit.studio">andy(at)saltyfruit.studio</a>
+
+    <div class="menu-foot">
+      <div class="menu-socials">
+        <a href="#" aria-label="LinkedIn">IN</a>
+      </div>
+      <p class="menu-copy">© 2026 Salty Fruit Studio</p>
+    </div>
+  </aside>
+
+  <script src="site.js"></script>
 </body>
 </html>
