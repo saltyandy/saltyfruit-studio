@@ -8,7 +8,10 @@ node_modules
 /golf-guru/public
 .claude
 
-# Over Vercel's 100MB per-file limit — the lab-live tile falls back gracefully.
-assets/video/orb-backdrop.mp4
-assets/lab-live/orb-backdrop.mp4
 lab/rings/node_modules
+lab/orb-capture/out
+lab/perq-capture/out
+
+# Parked pages — about has placeholder copy, fruta was an index experiment.
+about.html
+fruta-interactive.html
