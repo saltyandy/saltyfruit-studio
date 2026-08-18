@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import GuruLogo from './components/GuruLogo'
 import Home from './screens/Home'
 import Library from './screens/Library'
 import Preview from './screens/Preview'
@@ -51,22 +50,12 @@ export default function App() {
 
   return (
     <div className="demo-stage">
-      <div className="demo-stage__title">
-        <GuruLogo size={42} color="var(--sand-trap)" />
-        <div>
-          <h1>Golf Guru</h1>
-          <p>Mental-game coaching for golfers — interactive app demo</p>
-        </div>
-      </div>
       <div className="phone">
         <div className="phone__screen">
           <div className="phone__island" />
           <PhoneApp />
           <div className="phone__home-bar" />
         </div>
-      </div>
-      <div className="demo-stage__links">
-        <a href="#/brand">View brand showcase →</a>
       </div>
     </div>
   )
