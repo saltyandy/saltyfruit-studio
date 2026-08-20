@@ -73,6 +73,10 @@ export function Rings3() {
      before the next gesture. Swiping back steps back; swiping down on
      04 (or up on 01) releases the page. */
   useEffect(() => {
+    /* PORTFOLIO EDIT: in the embed the step latch can miss a chapter
+       flip and eat every swipe — a hard scroll trap mid-page (Andy
+       2026-08-13, from the car). Free touch scroll, like desktop. */
+    if (EMBED_FREE_SCROLL) return;
     if (!window.matchMedia("(max-width: 767px)").matches) return;
     let startY: number | null = null;
     let snapping = false;

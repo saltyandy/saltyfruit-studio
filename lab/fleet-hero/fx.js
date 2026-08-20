@@ -1,5 +1,11 @@
 /* WebGL effect layer — molten status rims + plasma strands.
-   Composited with mix-blend-mode: screen over the mesh-gradient background. */
+   Generalised for the two-level fleet map: up to MAXC capsule rims and MAXS
+   strands, each strand with its own width (dept trunks are ~2.4x), colour,
+   hover and reveal. Composited with mix-blend-mode: screen over the
+   mesh-gradient background. */
+
+const MAXC = 8;
+const MAXS = 8;
 
 const VERT = `
 attribute vec2 aP;
@@ -10,16 +16,19 @@ const FRAG = `
 precision highp float;
 uniform vec2  uRes;
 uniform float uT;
-uniform vec4  uCaps[4];   // xy = center, zw = half-size (pill)
-uniform vec3  uCol[4];
-uniform float uUrg[4];
-uniform vec2  uA0; uniform vec2 uA1; uniform vec2 uA2; uniform vec2 uA3;   // strand A cubic
-uniform vec2  uB0; uniform vec2 uB1; uniform vec2 uB2; uniform vec2 uB3;   // strand B cubic
-uniform float uHovA;
-uniform float uHovB;
-uniform float uRevA;
-uniform float uRevB;
 uniform float uGlowM;
+uniform float uFlare;   // widens + brightens the capsule rims (fleet level runs hotter)
+uniform vec4  uCaps[${MAXC}];   // xy = center, zw = half-size (pill)
+uniform vec3  uCol[${MAXC}];
+uniform float uUrg[${MAXC}];
+uniform float uNC;
+uniform vec2  uSP[${MAXS * 4}]; // strand cubics, 4 control points each
+uniform vec4  uSBB[${MAXS}];    // strand bounds (minXY, maxXY) for early-out
+uniform vec3  uSCol[${MAXS}];
+uniform float uSHov[${MAXS}];
+uniform float uSRev[${MAXS}];
+uniform float uSWid[${MAXS}];
+uniform float uNS;
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float noise(vec2 p) {
@@ -44,7 +53,8 @@ vec2 bezp(vec2 A, vec2 B, vec2 C, vec2 D, float t) {
   return m*m*m*A + 3.0*m*m*t*B + 3.0*m*t*t*C + t*t*t*D;
 }
 
-vec3 strand(vec2 p, vec2 A, vec2 B, vec2 C, vec2 D, float hovv, float seed, float rev) {
+vec3 strand(vec2 p, vec2 A, vec2 B, vec2 C, vec2 D,
+            float hovv, float seed, float rev, float wid, vec3 col) {
   float sd = 1e5, bt = 0.0;
   vec2 prev = A;
   for (int k = 1; k <= 28; k++) {
@@ -56,16 +66,16 @@ vec3 strand(vec2 p, vec2 A, vec2 B, vec2 C, vec2 D, float hovv, float seed, floa
     if (ds < sd) { sd = ds; bt = (float(k - 1) + h) / 28.0; }
     prev = cur;
   }
-  if (sd >= 120.0 || rev <= 0.001) return vec3(0.0);
+  if (sd >= 120.0 * wid || rev <= 0.001) return vec3(0.0);
 
   float endT = pow(max(sin(bt * 3.14159), 0.0), 0.7);               // tapers to a point at both ends
   float wob = (fbm(vec2(bt * 13.0 + seed, uT * 0.45)) - 0.5) * 2.4 * endT;
-  float sdd = sd - (0.3 + 1.2 * endT) - wob - hovv * 1.6 * endT;
+  float sdd = sd / wid - (0.3 + 1.2 * endT) - wob - hovv * 1.6 * endT;
 
   float core  = exp(-sdd * sdd / mix(1.1, 3.5, endT));
   float shalo = exp(-max(sdd, 0.0) / mix(7.0, 16.0, hovv)) * 0.06 * (0.2 + 0.8 * endT);
 
-  // plasma flowing toward the receiving agent — layered travelling noise
+  // plasma flowing toward the receiving node — layered travelling noise
   float flow = pow(0.5 + 0.5 * sin(bt * 26.0 - uT * (2.2 + hovv * 3.2) + seed), 2.0) * 0.7
              + fbm(vec2(bt * 34.0 - uT * 2.6 + seed, uT * 0.6)) * 0.55;
 
@@ -83,7 +93,7 @@ vec3 strand(vec2 p, vec2 A, vec2 B, vec2 C, vec2 D, float hovv, float seed, floa
   // stroke reveal: visible where bt < rev, with a bright travelling tip at the front
   float m = 1.0 - smoothstep(rev - 0.04, rev + 0.01, bt);
   float tipI = exp(-pow((bt - rev) * 34.0, 2.0)) * (1.0 - step(0.999, rev));
-  return (vec3(0.32, 0.83, 0.80) * sI + vec3(0.9, 1.0, 0.98) * drops * core * 0.14) * m
+  return (col * sI + vec3(0.9, 1.0, 0.98) * drops * core * 0.14) * m
        + vec3(0.7, 1.0, 0.97) * tipI * core * 1.1;
 }
 
@@ -92,11 +102,13 @@ void main() {
   vec3 acc = vec3(0.0);
 
   /* ── molten capsule rims ── */
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < ${MAXC}; i++) {
+    if (float(i) >= uNC) continue;
     vec2 c  = uCaps[i].xy;
     vec2 hs = uCaps[i].zw;
     float d = sdRoundBox(p - c, hs, hs.y);
-    if (d > 130.0 || d < -20.0) continue;
+    float cutR = 130.0 * uFlare;
+    if (d > cutR || d < -20.0) continue;
     float urg   = uUrg[i];
     float speed = mix(0.12, 0.36, urg);
     float fi    = float(i);
@@ -108,20 +120,27 @@ void main() {
     float dd = d - max(disp, -3.0);
 
     float pulse = 0.84 + 0.16 * sin(uT * mix(0.4, 1.1, urg) + fi * 1.7);
-    float rim  = exp(-dd * dd / mix(28.0, 56.0, urg));                 // soft molten band
-    float halo = exp(-max(dd, 0.0) / mix(24.0, 52.0, urg)) * mix(0.048, 0.15, urg);
-    float hotc = exp(-dd * dd / 9.0) * mix(0.05, 0.30, urg);          // faint hot filament
+    float fw   = 1.0 + (uFlare - 1.0) * 0.3;                           // only gently widen the band —
+    float rim  = exp(-dd * dd / (mix(28.0, 56.0, urg) * fw));          // the molten edge must stay hot
+    float halo = exp(-max(dd, 0.0) / (mix(24.0, 52.0, urg) * uFlare)) * mix(0.048, 0.15, urg) * uFlare;
+    halo *= 1.0 - smoothstep(cutR * 0.5, cutR, d);   // fade to nothing before the cutoff edge
+    float hotc = exp(-dd * dd / 9.0) * mix(0.05, 0.30, urg) * uFlare; // hot filament sharpens the edge
     float inside = smoothstep(-13.0, 2.0, d);                          // keep the card interior clean
 
-    float I = (rim * mix(0.14, 0.52, urg) + halo) * inside * pulse;
-    acc += (uCol[i] * I + vec3(1.0, 0.96, 0.9) * hotc * inside * pulse * mix(0.16, 0.5, urg)) * uGlowM;
+    float I = (rim * mix(0.14, 0.52, urg) + halo) * inside * pulse * (0.55 + 0.45 * uFlare);
+    acc += uCol[i] * I + vec3(1.0, 0.96, 0.9) * hotc * inside * pulse * mix(0.16, 0.5, urg);
   }
 
   /* ── plasma strands ── */
-  acc += strand(p, uA0, uA1, uA2, uA3, uHovA, 0.0, uRevA);
-  acc += strand(p, uB0, uB1, uB2, uB3, uHovB, 2.7, uRevB);
+  for (int i = 0; i < ${MAXS}; i++) {
+    if (float(i) >= uNS) continue;
+    vec4 bb = uSBB[i];
+    if (p.x < bb.x || p.y < bb.y || p.x > bb.z || p.y > bb.w) continue;
+    acc += strand(p, uSP[i * 4], uSP[i * 4 + 1], uSP[i * 4 + 2], uSP[i * 4 + 3],
+                  uSHov[i], float(i) * 2.13 + 0.4, uSRev[i], uSWid[i], uSCol[i]);
+  }
 
-  vec3 col = 1.0 - exp(-acc * 1.55);   // soft filmic clamp
+  vec3 col = 1.0 - exp(-acc * uGlowM * 1.55);   // soft filmic clamp; uGlowM fades the whole layer
   gl_FragColor = vec4(col, 1.0);
 }
 `;
@@ -152,30 +171,60 @@ export function createFx(canvas) {
   gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
 
   const U = {};
-  for (const n of ['uRes', 'uT', 'uCaps', 'uCol', 'uUrg',
-                   'uA0', 'uA1', 'uA2', 'uA3', 'uB0', 'uB1', 'uB2', 'uB3', 'uHovA', 'uHovB', 'uRevA', 'uRevB', 'uGlowM'])
+  for (const n of ['uRes', 'uT', 'uGlowM', 'uFlare', 'uCaps', 'uCol', 'uUrg', 'uNC',
+                   'uSP', 'uSBB', 'uSCol', 'uSHov', 'uSRev', 'uSWid', 'uNS'])
     U[n] = gl.getUniformLocation(prog, n);
 
   gl.uniform2f(U.uRes, canvas.width, canvas.height);
 
+  const CAPS = new Float32Array(MAXC * 4), CCOL = new Float32Array(MAXC * 3), CURG = new Float32Array(MAXC);
+  const SP = new Float32Array(MAXS * 4 * 2), SBB = new Float32Array(MAXS * 4), SCOL = new Float32Array(MAXS * 3);
+  const SHOV = new Float32Array(MAXS), SREV = new Float32Array(MAXS), SWID = new Float32Array(MAXS);
+
   return {
     setScene({ caps, cols, urgs }) {
-      gl.uniform4fv(U.uCaps, new Float32Array(caps));
-      gl.uniform3fv(U.uCol, new Float32Array(cols));
-      gl.uniform1fv(U.uUrg, new Float32Array(urgs));
+      CAPS.fill(0); CCOL.fill(0); CURG.fill(0);
+      CAPS.set(caps.slice(0, MAXC * 4));
+      CCOL.set(cols.slice(0, MAXC * 3));
+      CURG.set(urgs.slice(0, MAXC));
+      gl.uniform4fv(U.uCaps, CAPS);
+      gl.uniform3fv(U.uCol, CCOL);
+      gl.uniform1fv(U.uUrg, CURG);
+      gl.uniform1f(U.uNC, Math.min(urgs.length, MAXC));
     },
-    render({ t, strands, revA = 1, revB = 1, glowM = 1 }) {
+    // strands: [{ p0, p1, p2, p3, hov, rev, wid, col: [r,g,b] }]
+    render({ t, strands = [], glowM = 1, flare = 1 }) {
       gl.uniform1f(U.uT, t);
-      gl.uniform1f(U.uRevA, revA);
-      gl.uniform1f(U.uRevB, revB);
       gl.uniform1f(U.uGlowM, glowM);
-      const [A, B] = strands;
-      gl.uniform2f(U.uA0, A.p0.x, A.p0.y); gl.uniform2f(U.uA1, A.p1.x, A.p1.y);
-      gl.uniform2f(U.uA2, A.p2.x, A.p2.y); gl.uniform2f(U.uA3, A.p3.x, A.p3.y);
-      gl.uniform1f(U.uHovA, A.hov);
-      gl.uniform2f(U.uB0, B.p0.x, B.p0.y); gl.uniform2f(U.uB1, B.p1.x, B.p1.y);
-      gl.uniform2f(U.uB2, B.p2.x, B.p2.y); gl.uniform2f(U.uB3, B.p3.x, B.p3.y);
-      gl.uniform1f(U.uHovB, B.hov);
+      gl.uniform1f(U.uFlare, flare);
+      const n = Math.min(strands.length, MAXS);
+      SP.fill(0); SBB.fill(0); SCOL.fill(0); SHOV.fill(0); SREV.fill(0); SWID.fill(1);
+      for (let i = 0; i < n; i++) {
+        const S = strands[i];
+        const pts = [S.p0, S.p1, S.p2, S.p3];
+        let mnx = 1e9, mny = 1e9, mxx = -1e9, mxy = -1e9;
+        pts.forEach((p, j) => {
+          SP[(i * 4 + j) * 2] = p.x;
+          SP[(i * 4 + j) * 2 + 1] = p.y;
+          mnx = Math.min(mnx, p.x); mny = Math.min(mny, p.y);
+          mxx = Math.max(mxx, p.x); mxy = Math.max(mxy, p.y);
+        });
+        const m = 130 * (S.wid || 1) + 20;   // curve stays inside its control hull + glow falloff
+        SBB[i * 4] = mnx - m; SBB[i * 4 + 1] = mny - m;
+        SBB[i * 4 + 2] = mxx + m; SBB[i * 4 + 3] = mxy + m;
+        SHOV[i] = S.hov || 0;
+        SREV[i] = S.rev ?? 1;
+        SWID[i] = S.wid || 1;
+        const c = S.col || [0.32, 0.83, 0.80];
+        SCOL[i * 3] = c[0]; SCOL[i * 3 + 1] = c[1]; SCOL[i * 3 + 2] = c[2];
+      }
+      gl.uniform2fv(U.uSP, SP);
+      gl.uniform4fv(U.uSBB, SBB);
+      gl.uniform3fv(U.uSCol, SCOL);
+      gl.uniform1fv(U.uSHov, SHOV);
+      gl.uniform1fv(U.uSRev, SREV);
+      gl.uniform1fv(U.uSWid, SWID);
+      gl.uniform1f(U.uNS, n);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     },
   };

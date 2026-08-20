@@ -21,17 +21,17 @@
    overrides these — but they still beat the site's `*` reset because
    this sheet loads later. */
 
-:where(#lab-live-root, #lab-live-root *) {
+:where(#lab-live-root, #lab-live-root *, #mood-live-root, #mood-live-root *) {
   box-sizing: border-box;
 }
-:where(#lab-live-root) {
+:where(#lab-live-root, #mood-live-root) {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
-:where(#lab-live-root p) {
+:where(#lab-live-root p, #mood-live-root p) {
   margin: 0;
 }
-:where(#lab-live-root button) {
+:where(#lab-live-root button, #mood-live-root button) {
   appearance: none;
   background: none;
   border: 0;
@@ -41,7 +41,7 @@
   color: inherit;
   text-align: inherit;
 }
-:where(#lab-live-root svg) {
+:where(#lab-live-root svg, #mood-live-root svg) {
   display: block;
 }
 
@@ -106,6 +106,15 @@
 .btn-obsidian:hover {
   background: #1d2029;
   box-shadow: 0 8px 24px rgba(10, 12, 20, 0.28);
+}
+
+/* the mood tile's invitation breathes until the reader takes the slider */
+@keyframes mood-hint-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+.mood-hint {
+  animation: mood-hint-breathe 2.4s ease-in-out infinite;
 }
 
 @keyframes rise {

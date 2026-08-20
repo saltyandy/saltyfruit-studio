@@ -3,6 +3,7 @@ import {OrbLabTile, LAB_TILE_DURATION_S} from './nuvolari/OrbLabTile';
 import {ProcessReel, processReelDuration, FPS} from './process/ProcessReel';
 import {GvProcessReel, gvProcessReelDuration} from './process/GvProcessReel';
 import {GvSweepReel, gvSweepReelDuration} from './process/GvSweepReel';
+import {PerqStoreReel, perqStoreReelDuration} from './process/PerqStoreReel';
 import {CinemaHero, CINEMA_DURATION_S} from './nuvolari/CinemaHero';
 import {SchematicFilm, SCHEMATIC_LOOP_S} from './nuvolari/SchematicFilm';
 import {OrbBackdrop, BACKDROP_RENDER_S} from './nuvolari/OrbBackdrop';
@@ -65,6 +66,14 @@ export const Root: React.FC = () => {
         fps={FPS}
         width={1920}
         height={1080}
+      />
+      <Composition
+        id="PerqStoreReel"
+        component={PerqStoreReel}
+        durationInFrames={perqStoreReelDuration()}
+        fps={FPS}
+        width={1920}
+        height={1200}
       />
     </>
   );

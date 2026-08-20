@@ -12,6 +12,7 @@
     "render:process": "npm run manifest && remotion render ProcessReel ../assets/video/process-reel.mp4",
     "render:gv-process": "remotion render GvProcessReel ../assets/getvocal/process-reel.mp4",
     "render:gv-sweep": "remotion render GvSweepReel ../assets/getvocal/aurora-sweep.mp4",
+    "render:perq-store": "remotion render PerqStoreReel ../assets/perq/store-reel.mp4",
     "render:process:gif": "npm run manifest && remotion render ProcessReel ../assets/video/process-reel.gif --codec=gif --every-nth-frame=2"
   },
   "dependencies": {

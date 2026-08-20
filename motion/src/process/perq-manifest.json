@@ -1,0 +1,34 @@
+{
+  "frames": [
+    {
+      "src": "perq-store/walkthrough-welcome.jpg",
+      "tag": "ONB-01",
+      "kind": "Onboarding",
+      "label": "PERQ in, BEAN$ out"
+    },
+    {
+      "src": "perq-store/walkthrough-beans.jpg",
+      "tag": "ONB-02",
+      "kind": "Onboarding",
+      "label": "Three ways to spend"
+    },
+    {
+      "src": "perq-store/loyalty-store.jpg",
+      "tag": "STORE-03",
+      "kind": "Store",
+      "label": "The loyalty store"
+    },
+    {
+      "src": "perq-store/purchase-complete.jpg",
+      "tag": "STORE-04",
+      "kind": "Store",
+      "label": "Instant — no signing, no gas"
+    },
+    {
+      "src": "perq-store/roaster.jpg",
+      "tag": "ROAST-05",
+      "kind": "Roaster",
+      "label": "Out of BEAN$? Roast more PERQ"
+    }
+  ]
+}

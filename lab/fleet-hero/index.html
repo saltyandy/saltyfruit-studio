@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>GetVocal V3 — Fleet (hero build)</title>
+<title>GetVocal V3 — Fleet map (hero build)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&display=swap" rel="stylesheet" />
@@ -50,6 +50,15 @@
   }
   #fxw { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; }
 
+  /* ── zoom levels ───────────────────────── */
+  .level {
+    position: absolute; inset: 0; transform-origin: center center;
+    transition: opacity .5s cubic-bezier(.16, 1, .3, 1), transform .6s cubic-bezier(.16, 1, .3, 1);
+  }
+  .level.gone { opacity: 0; pointer-events: none; }
+  #level-fleet.gone { transform: scale(1.16); }   /* fleet flies past the camera on the way in */
+  #level-agents.gone { transform: scale(0.9); }   /* agents sit one level deeper */
+
   /* ── boot overlay ───────────────────────── */
   #boot {
     position: absolute; inset: 0; z-index: 10; background: var(--bg);
@@ -82,6 +91,9 @@
     backdrop-filter: blur(24px);
     font-size: 12px; font-weight: 600; letter-spacing: 0.025em; color: var(--text);
   }
+  #breadcrumb .bc-link { color: var(--text3); cursor: pointer; transition: color .2s; }
+  #breadcrumb .bc-link:hover { color: var(--text); }
+  #breadcrumb .bc-sep { color: var(--text4); padding: 0 7px; }
   #bell { left: 1784px; top: 100px; position: absolute; }
   #bell .badge {
     position: absolute; left: 24px; top: -4px; min-width: 16px; height: 16px; padding: 0 4px;
@@ -132,7 +144,7 @@
     backdrop-filter: blur(24px);
   }
   #zoom .zbtn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--text3); cursor: pointer; }
-  #zoom .zbtn.off { opacity: 0.3; }
+  #zoom .zbtn.off { opacity: 0.3; cursor: default; }
   #zoom .zdiv { width: 1px; height: 20px; background: var(--border); }
   #zoom .zlabel { padding: 0 12px; font-size: 9px; font-weight: 500; letter-spacing: 0.05em; color: var(--text); }
 
@@ -154,7 +166,13 @@
     font-size: 9px; color: var(--text3); border: 1px solid var(--border); border-radius: 6px;
     padding: 2px 5px; background: var(--surface1); flex-shrink: 0;
   }
+
   /* ── analysis takeover sheet ────────────── */
+  #scrim {
+    position: absolute; inset: 0; z-index: 4; background: rgb(4 5 9 / 55%);
+    opacity: 0; pointer-events: none; transition: opacity .4s ease;
+  }
+  #scrim.show { opacity: 1; pointer-events: auto; }
   #anacard {
     position: absolute; left: 50%; top: 50%; z-index: 5;
     width: 1120px; height: 780px; padding: 44px 56px 30px;
@@ -240,6 +258,49 @@
   .act.closebtn:hover { background: var(--surface2); color: var(--text); }
   #ana-status { font-size: 11px; color: var(--text3); min-height: 14px; text-align: center; }
 
+  /* ── fleet level: department nodes ─────── */
+  .dept {
+    position: absolute; border-radius: 50%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    background: #080B19; border: 1px solid #1E2A44;
+    box-shadow: inset 0 1px 0 #DCE6FF12, 0 14px 35px #000000B3;
+    cursor: pointer; transition: border-color .35s, box-shadow .35s;
+  }
+  .dept:hover { border-color: #35415F; box-shadow: inset 0 1px 0 #DCE6FF12, 0 18px 45px #000000CC; }
+  .dept .dname {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 13px; font-weight: 600; letter-spacing: 0.05em; color: #F2F4F8;
+  }
+  .dept .dname .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
+  .dept .dname .dot.amber { background: var(--amber); }
+  .dept .dname .dot.red { background: var(--red-hot); }
+  .dept .dstat { display: flex; align-items: baseline; gap: 3px; line-height: 1; margin-top: 3px; }
+  .dept .dstat .num { font-size: 44px; font-weight: 300; letter-spacing: -0.02em; color: #F2F4F8; }
+  .dept .dstat .unit { font-size: 17px; font-weight: 300; color: var(--text3); }
+  .dept .dslabel { font-size: 9px; letter-spacing: 0.09em; color: rgb(255 255 255 / 40%); }
+  .dept .ddelta { font-size: 9.5px; font-weight: 600; letter-spacing: 0.04em; margin-top: 1px; }
+  .dept .ddelta.red { color: #F87171; }
+  .dept .ddelta.amber { color: var(--amber); }
+  .dept .dcount { font-size: 7px; font-weight: 600; letter-spacing: 0.14em; color: var(--text4); margin-top: 4px; }
+  /* agents sit as health dots on the department's rim */
+  .adot {
+    position: absolute; width: 7px; height: 7px; border-radius: 50%; background: var(--green);
+    box-shadow: 0 0 0 3px #080B19; z-index: 2;
+  }
+  .adot.amber { background: var(--amber); }
+  .adot.red { background: var(--red-hot); animation: aping 1.8s ease-out infinite; }
+  @keyframes aping {
+    0% { box-shadow: 0 0 0 3px #080B19, 0 0 0 3px rgb(239 68 68 / 45%); }
+    70%, 100% { box-shadow: 0 0 0 3px #080B19, 0 0 0 10px rgb(239 68 68 / 0%); }
+  }
+  .adot .att {
+    position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+    padding: 3px 8px; border-radius: 999px; background: var(--chrome-bg); border: 1px solid var(--border);
+    font-size: 8px; color: var(--text2); white-space: nowrap;
+    opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 2;
+  }
+  .adot:hover .att { opacity: 1; }
+
   /* ── agent cluster ──────────────────────── */
   .comp { position: absolute; display: flex; flex-direction: column; align-items: center; padding: 16px 0; width: 448px; }
   .ops-pill {
@@ -303,11 +364,15 @@
   <div id="dots"></div>
   <canvas id="fxw" width="1920" height="1080"></canvas>
 
+  <!-- zoom levels: fleet map (departments) above, agent cluster below -->
+  <div id="level-fleet" class="level"></div>
+  <div id="level-agents" class="level gone"></div>
+
   <!-- chrome -->
   <button class="chrome-btn" id="app-menu" aria-label="Menu">
     <svg class="ic" width="16" height="16" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
   </button>
-  <div id="breadcrumb">Fleet</div>
+  <div id="breadcrumb"><span id="bc-root">Fleet</span><span id="bc-tail" style="display:none"><span class="bc-sep">/</span>Sales</span></div>
   <button class="chrome-btn" id="bell" aria-label="Notifications">
     <svg class="ic" width="16" height="16" viewBox="0 0 24 24"><path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6"/><path d="M9 17v1a3 3 0 0 0 6 0v-1"/></svg>
     <span class="badge">3</span>
@@ -326,9 +391,9 @@
   </div>
 
   <div id="zoom">
-    <div class="zbtn off">−</div><div class="zdiv"></div>
-    <div class="zlabel">FLEET</div>
-    <div class="zdiv"></div><div class="zbtn">+</div>
+    <div class="zbtn off" id="zout">−</div><div class="zdiv"></div>
+    <div class="zlabel" id="zlabel">FLEET · 28 AGENTS</div>
+    <div class="zdiv"></div><div class="zbtn" id="zin">+</div>
   </div>
 
   <!-- analysis takeover sheet -->
@@ -400,16 +465,14 @@
   <div id="cmdwrap">
     <div id="cmdbar">
       <span class="spark"><svg class="ic" width="14" height="14" viewBox="0 0 24 24"><path d="M12 3l1.9 5.6L19.5 10.5l-5.6 1.9L12 18l-1.9-5.6L4.5 10.5l5.6-1.9z"/></svg></span>
-      <input id="cmdinput" type="text" placeholder='Ask your fleet anything — "why did callbacks drop on Post Care?"' />
+      <input id="cmdinput" type="text" placeholder='Ask across the fleet — "which department needs attention right now?"' />
       <span class="kbd">⌘</span><span class="kbd">K</span>
     </div>
   </div>
 
-  <!-- agents injected here -->
-
   <!-- boot overlay -->
   <div id="boot">
-    <div class="bootbox"><span class="bootdot"></span><span>Loading agents</span></div>
+    <div class="bootbox"><span class="bootdot"></span><span>Loading fleet</span></div>
     <div class="bootline"><i></i></div>
   </div>
 </div>
@@ -434,6 +497,8 @@
 
   /* ── data ── */
   const TEAL = '#4AA8A8', AMBER = '#E8B558', RED = '#EF4444';
+
+  // agent level — the Sales department's four agents
   const AGENTS = [
     { id: 'sales',    x: 364,  y: 249, name: 'Sales',     ops: 6, inN: 3, outN: 2, glow: AMBER, dotRed: false,
       metrics: [{ v: 76,  l: 'Deals Closed',    c: '' }, { v: 71, l: 'Resolution rate', c: '' }, { v: 64, l: 'Deflection', c: 'amber' }],
@@ -449,7 +514,36 @@
       inAmber: false, outAmber: false, ab: '· 3d' },
   ];
 
+  // fleet level — every department, its headline stat, and its agents' health.
+  // cx/cy = circle center on the 1920x1080 stage, r = radius (sized loosely by team)
+  const DEPTS = [
+    { id: 'marketing', cx: 390,  cy: 280, r: 96,  name: 'Marketing', glow: TEAL,  stat: 312, unit: '',  label: 'LEADS / DAY',
+      agents: [['Campaigns', TEAL], ['Winback', TEAL], ['Surveys', TEAL], ['Reviews', TEAL]] },
+    { id: 'sales',     cx: 960,  cy: 265, r: 118, name: 'Sales',     glow: RED,   stat: 38,  unit: '',  label: 'CALLBACKS / DAY', delta: '↓ 64% since Tuesday',
+      agents: [['Sales', AMBER], ['Orders', TEAL], ['Post Care', RED], ['Returns', TEAL]] },
+    { id: 'support',   cx: 1532, cy: 292, r: 106, name: 'Support',   glow: TEAL,  stat: 92,  unit: '%', label: 'RESOLUTION RATE',
+      agents: [['Tier 1', TEAL], ['Tier 2', TEAL], ['Billing Help', TEAL], ['Tech Desk', TEAL], ['Escalations', TEAL], ['FAQ', TEAL]] },
+    { id: 'itops',     cx: 388,  cy: 728, r: 98,  name: 'IT Ops',    glow: TEAL,  stat: 99,  unit: '%', label: 'UPTIME',
+      agents: [['Access', TEAL], ['Incidents', TEAL], ['Provisioning', TEAL], ['Patching', TEAL], ['On-call', TEAL]] },
+    { id: 'logistics', cx: 960,  cy: 782, r: 104, name: 'Logistics', glow: AMBER, stat: 31,  unit: '',  label: 'DELAYED SHIPMENTS', delta: 'carrier API latency rising',
+      agents: [['Tracking', TEAL], ['Carrier Desk', AMBER], ['Warehouse', TEAL], ['Delivery Care', TEAL], ['Customs', TEAL]] },
+    { id: 'finance',   cx: 1532, cy: 722, r: 96,  name: 'Finance',   glow: TEAL,  stat: 97,  unit: '%', label: 'INVOICES MATCHED',
+      agents: [['Invoicing', TEAL], ['Collections', TEAL], ['Refunds', TEAL], ['Fraud Watch', TEAL]] },
+  ];
+
+  // conversation flow between departments — drawn as thick plasma trunks
+  const FLOWS = [
+    ['marketing', 'sales'],
+    ['sales', 'logistics'],
+    ['logistics', 'support'],
+    ['support', 'finance'],
+    ['itops', 'logistics'],
+    ['finance', 'sales'],
+  ];
+
   const stage = document.getElementById('stage');
+  const levF = document.getElementById('level-fleet');
+  const levA = document.getElementById('level-agents');
   const icPeople = '<svg class="ic" width="12" height="12" viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.9a3 3 0 0 1 0 6.2M21 21v-2a4 4 0 0 0-3-3.85"/></svg>';
   const icIn  = '<svg class="ic" width="14" height="14" viewBox="0 0 24 24"><path d="M12 4v10M8 10l4 4 4-4"/><path d="M5 19h14"/></svg>';
   const icOut = '<svg class="ic" width="14" height="14" viewBox="0 0 24 24"><path d="M12 18V8M8 12l4-4 4 4"/><path d="M5 21h14"/></svg>';
@@ -474,7 +568,38 @@
         <div class="conn r"></div>
         <div class="dpill out ${a.outAmber ? 'amber' : ''}">${icOut}${a.outN}</div>
       </div>`;
-    stage.appendChild(el);
+    levA.appendChild(el);
+  }
+
+  const dotCls = (c) => c === RED ? 'red' : c === AMBER ? 'amber' : '';
+  for (const d of DEPTS) {
+    const el = document.createElement('div');
+    el.className = 'dept'; el.id = 'dept-' + d.id;
+    el.style.left = (d.cx - d.r) + 'px'; el.style.top = (d.cy - d.r) + 'px';
+    el.style.width = el.style.height = (d.r * 2) + 'px';
+    // agents perch along the top arc of the rim, centered on 12 o'clock
+    const n = d.agents.length;
+    const gap = n > 4 ? 13 : 16;
+    const dots = d.agents.map(([name, c], i) => {
+      const th = (-90 - ((n - 1) * gap) / 2 + i * gap) * Math.PI / 180;
+      const x = d.r + Math.cos(th) * d.r - 3.5;
+      const y = d.r + Math.sin(th) * d.r - 3.5;
+      return `<span class="adot ${dotCls(c)}" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px"><span class="att">${name}</span></span>`;
+    }).join('');
+    el.innerHTML = `
+      ${dots}
+      <div class="dname">${d.name}<span class="dot ${dotCls(d.glow)}"></span></div>
+      <div class="dstat"><span class="num">${d.stat}</span>${d.unit ? `<span class="unit">${d.unit}</span>` : ''}</div>
+      <div class="dslabel">${d.label}</div>
+      ${d.delta ? `<div class="ddelta ${d.glow === RED ? 'red' : 'amber'}">${d.delta}</div>` : ''}
+      <div class="dcount">${d.agents.length} AGENTS</div>`;
+    el.addEventListener('click', () => {
+      if (d.id === 'sales') toAgents();
+      else el.animate(
+        [{ transform: 'scale(1)' }, { transform: 'scale(0.97)' }, { transform: 'scale(1)' }],
+        { duration: 260, easing: 'ease' });
+    });
+    levF.appendChild(el);
   }
 
   /* ── stage scaling ── */
@@ -484,20 +609,31 @@
   }
   addEventListener('resize', fit); fit();
 
-  /* ── WebGL effect layer: molten rims + plasma strand ── */
+  /* ── WebGL effect layer: molten rims + plasma strands ── */
   const fx = createFx(document.getElementById('fxw'));
 
-  // measure capsule geometry (card rect within the 1920x1080 stage space)
-  function stageRect(el) {
-    const s = stage.getBoundingClientRect();
+  // measure geometry within the 1920x1080 stage space; measuring relative to the
+  // level container (inset: 0, so it spans the full stage) cancels out the
+  // container's zoom transform, keeping coordinates correct mid-transition
+  function stageRect(el, root = stage) {
+    const s = root.getBoundingClientRect();
     const r = el.getBoundingClientRect();
     const k = 1920 / s.width;
     return { x: (r.left - s.left) * k, y: (r.top - s.top) * k, w: r.width * k, h: r.height * k };
   }
 
-  let strands = null; // [{ a, b, seed, hov }] anchors on the pills
+  let level = 'boot';   // 'boot' | 'fleet' | 'agents' | 'zoom' (mid-transition)
+  let strands = null;   // [{ a, b, seed, hov, wid, col, revT, revDur, fi?, ti? }] — a/b carry outward normals
+  let glowCur = 0, glowTarget = 0;
+  let curFx = null;     // which level's geometry the fx scene holds
+  let fleetBase = null; // un-floated fleet caps/cols/urgs for per-frame drift
+
+  // slow buoy drift per department — lissajous so x/y never sync
+  function floatOff(i, t) {
+    const ph = i * 1.37;
+    return { x: Math.sin(t * 0.26 + ph) * 6, y: Math.sin(t * 0.21 + ph * 1.9) * 8 };
+  }
   let mouse = { x: -1e4, y: -1e4 };
-  let hov = 0;        // smoothed hover intensity on the strand
   addEventListener('pointermove', (e) => {
     const s = stage.getBoundingClientRect();
     const k = 1920 / s.width;
@@ -505,24 +641,64 @@
   });
 
   function hexV3(h) { return [parseInt(h.slice(1,3),16)/255, parseInt(h.slice(3,5),16)/255, parseInt(h.slice(5,7),16)/255]; }
+  const urgOf = (c) => c === RED ? 1 : c === AMBER ? 0.55 : 0.3;
 
-  function buildFx() {
+  function buildAgentFx() {
     const caps = [], cols = [], urgs = [];
     for (const a of AGENTS) {
-      const r = stageRect(document.querySelector('#comp-' + a.id + ' .card'));
+      const r = stageRect(document.querySelector('#comp-' + a.id + ' .card'), levA);
       caps.push(r.x + r.w / 2, r.y + r.h / 2, r.w / 2, r.h / 2);
       cols.push(...hexV3(a.glow));
-      urgs.push(a.glow === RED ? 1 : a.glow === AMBER ? 0.55 : 0.3);
+      urgs.push(urgOf(a.glow));
     }
     if (fx) fx.setScene({ caps, cols, urgs });
+    curFx = 'agents';
     const anchor = (sel, side) => {
-      const r = stageRect(document.querySelector(sel));
-      return { x: side === 'out' ? r.x + r.w + 2 : r.x - 2, y: r.y + r.h / 2 };
+      const r = stageRect(document.querySelector(sel), levA);
+      return side === 'out'
+        ? { x: r.x + r.w + 2, y: r.y + r.h / 2, nx: 1, ny: 0 }
+        : { x: r.x - 2, y: r.y + r.h / 2, nx: -1, ny: 0 };
     };
     strands = [
-      { a: anchor('#comp-sales .dpill.out', 'out'),  b: anchor('#comp-returns .dpill.in', 'in'), seed: 0,   hov: 0 },
-      { a: anchor('#comp-orders .dpill.out', 'out'), b: anchor('#comp-returns .dpill.in', 'in'), seed: 2.7, hov: 0 },
+      { a: anchor('#comp-sales .dpill.out', 'out'),  b: anchor('#comp-returns .dpill.in', 'in'), seed: 0,   hov: 0, wid: 1, col: hexV3(TEAL), revT: -1, revDur: 1150 },
+      { a: anchor('#comp-orders .dpill.out', 'out'), b: anchor('#comp-returns .dpill.in', 'in'), seed: 2.7, hov: 0, wid: 1, col: hexV3(TEAL), revT: -1, revDur: 1150 },
     ];
+  }
+
+  // anchor on the pill's edge along the line toward the other department
+  function edge(C, tx, ty) {
+    let dx = tx - C.x, dy = ty - C.y;
+    const l = Math.hypot(dx, dy) || 1; dx /= l; dy /= l;
+    const rx = C.r.w / 2 + 4, ry = C.r.h / 2 + 4;
+    const k = 1 / Math.sqrt((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry));
+    return { x: C.x + dx * k, y: C.y + dy * k, nx: dx, ny: dy };
+  }
+
+  function buildFleetFx() {
+    // measure with the current drift subtracted out — draw() re-adds it live
+    const tNow = performance.now() / 1000;
+    const caps = [], cols = [], urgs = [];
+    DEPTS.forEach((d, i) => {
+      const r = stageRect(document.getElementById('dept-' + d.id), levF);
+      const o = floatOff(i, tNow);
+      caps.push(r.x + r.w / 2 - o.x, r.y + r.h / 2 - o.y, r.w / 2, r.h / 2);
+      cols.push(...hexV3(d.glow));
+      urgs.push(urgOf(d.glow));
+    });
+    fleetBase = { caps, cols, urgs };
+    curFx = 'fleet';
+    const ctr = (id) => {
+      const i = DEPTS.findIndex((d) => d.id === id);
+      const r = stageRect(document.getElementById('dept-' + id), levF);
+      const o = floatOff(i, tNow);
+      r.x -= o.x; r.y -= o.y;
+      return { i, r, x: r.x + r.w / 2, y: r.y + r.h / 2 };
+    };
+    strands = FLOWS.map(([f, t], i) => {
+      const F = ctr(f), T = ctr(t);
+      return { a: edge(F, T.x, T.y), b: edge(T, F.x, F.y), fi: F.i, ti: T.i,
+               seed: i * 1.7 + 0.4, hov: 0, wid: 2.4, col: hexV3(TEAL), revT: -1, revDur: 1300 };
+    });
   }
 
   function bez(p0, p1, p2, p3, t) {
@@ -532,19 +708,51 @@
       y: mt*mt*mt*p0.y + 3*mt*mt*t*p1.y + 3*mt*t*t*p2.y + t*t*t*p3.y,
     };
   }
+  const sm = (k) => k * k * (3 - 2 * k);
 
+  const deptEls = () => DEPTS.map((d) => document.getElementById('dept-' + d.id));
+  let deptCache = null;
+
+  let lastTms = 0;
   function draw(tms) {
     const t = tms / 1000;
-    if (fx && strands) {
-      const packed = strands.map((S) => {
-        const { a, b, seed } = S;
-        // smooth horizontal tangents: exit the out-pill rightward, enter the in-pill from the left
+    const dt = Math.min(lastTms ? (tms - lastTms) / 1000 : 0.016, 0.25);
+    lastTms = tms;
+
+    // departments drift like buoys; rims and trunk anchors track them below
+    if (!deptCache) deptCache = deptEls();
+    deptCache.forEach((el, i) => {
+      const o = floatOff(i, t);
+      el.style.translate = `${o.x.toFixed(2)}px ${o.y.toFixed(2)}px`;
+    });
+
+    if (fx) {
+      // wall-clock bloom so throttled/dropped frames can't stall it
+      const rate = glowTarget > glowCur ? 2.2 : 10;
+      glowCur += (glowTarget - glowCur) * (1 - Math.exp(-dt * rate));
+      if (curFx === 'fleet' && fleetBase) {
+        const caps = fleetBase.caps.slice();
+        DEPTS.forEach((d, i) => {
+          const o = floatOff(i, t);
+          caps[i * 4] += o.x; caps[i * 4 + 1] += o.y;
+        });
+        fx.setScene({ caps, cols: fleetBase.cols, urgs: fleetBase.urgs });
+      }
+      const packed = (strands || []).map((S) => {
+        const { seed, wid } = S;
+        const oA = S.fi != null ? floatOff(S.fi, t) : { x: 0, y: 0 };
+        const oB = S.ti != null ? floatOff(S.ti, t) : { x: 0, y: 0 };
+        const a = { x: S.a.x + oA.x, y: S.a.y + oA.y, nx: S.a.nx, ny: S.a.ny };
+        const b = { x: S.b.x + oB.x, y: S.b.y + oB.y, nx: S.b.nx, ny: S.b.ny };
+        // tangents follow each anchor's outward normal; wobble runs perpendicular
         const len = Math.hypot(b.x - a.x, b.y - a.y);
-        const L = Math.min(Math.max(len * 0.35, 60), 220);
-        const p1 = { x: a.x + L + Math.sin(t * 0.71 + seed * 2) * 5,
-                     y: a.y + Math.sin(t * 0.62 + seed) * 9 + Math.sin(t * 1.27 + seed * 2) * 4 };
-        const p2 = { x: b.x - L + Math.sin(t * 0.66 + 1.3 + seed) * 5,
-                     y: b.y + Math.sin(t * 0.54 + 1.7 + seed) * 10 + Math.sin(t * 1.09 + 2 + seed) * 3 };
+        const L = Math.min(Math.max(len * 0.35, 60), 260);
+        const w1 = Math.sin(t * 0.62 + seed) * 9 + Math.sin(t * 1.27 + seed * 2) * 4;
+        const w2 = Math.sin(t * 0.54 + 1.7 + seed) * 10 + Math.sin(t * 1.09 + 2 + seed) * 3;
+        const j1 = Math.sin(t * 0.71 + seed * 2) * 5;
+        const j2 = Math.sin(t * 0.66 + 1.3 + seed) * 5;
+        const p1 = { x: a.x + a.nx * (L + j1) - a.ny * w1, y: a.y + a.ny * (L + j1) + a.nx * w1 };
+        const p2 = { x: b.x + b.nx * (L + j2) - b.ny * w2, y: b.y + b.ny * (L + j2) + b.nx * w2 };
         // hover: how close is the cursor to this strand?
         let dmin = 1e9;
         for (let i = 0; i <= 32; i++) {
@@ -552,23 +760,16 @@
           const dd = Math.hypot(mouse.x - p.x, mouse.y - p.y);
           if (dd < dmin) dmin = dd;
         }
-        S.hov += ((dmin < 60 ? 1 : 0) - S.hov) * 0.07;
-        return { p0: a, p1, p2, p3: b, hov: S.hov };
+        S.hov += ((dmin < 42 + wid * 14 ? 1 : 0) - S.hov) * 0.07;
+        const rev = S.revT < 0 ? 0 : sm(Math.min(Math.max((tms - S.revT) / S.revDur, 0), 1));
+        return { p0: a, p1, p2, p3: b, hov: S.hov, rev, wid, col: S.col };
       });
-      const rv = (t0, dur) => (t0 < 0 ? 0 : Math.min(Math.max((tms - t0) / dur, 0), 1));
-      const sm = (k) => k * k * (3 - 2 * k);
-      fx.render({
-        t, strands: packed,
-        revA: sm(rv(anim.revA, 1150)),
-        revB: sm(rv(anim.revB, 1150)),
-        glowM: 1 - Math.pow(1 - rv(anim.glow, 1400), 2.5),
-      });
+      fx.render({ t, strands: packed, glowM: glowCur, flare: curFx === 'fleet' ? 2.1 : 1 });
     }
     requestAnimationFrame(draw);
   }
 
   /* ── intro choreography ── */
-  const anim = { revA: -1, revB: -1, glow: -1 };
   const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
 
   function countUp(el, target, dur, delay) {
@@ -581,26 +782,36 @@
     })(performance.now());
   }
 
-  document.fonts.ready.then(() => {
-    requestAnimationFrame(() => { document.querySelector('#boot .bootline i').style.width = '100%'; });
-    requestAnimationFrame(draw);
-
-    const BASE = 820;
-    setTimeout(() => document.getElementById('boot').classList.add('hide'), BASE - 60);
-
-    // chrome drifts in
-    [['#app-menu', '', 0, -10], ['#breadcrumb', '', 0, -10], ['#bell', '', 0, -10],
-     ['#modes', 'translateY(-50%)', -14, 0], ['#filters', '', 0, 12],
-     ['#cmdwrap', 'translateX(-50%)', 0, 14], ['#zoom', '', 0, 12]].forEach(([sel, base, x, y], i) => {
-      document.querySelector(sel).animate(
-        [{ opacity: 0, transform: `${base} translate(${x}px, ${y}px)` },
-         { opacity: 1, transform: `${base} translate(0px, 0px)` }],
-        { duration: 500, delay: BASE + i * 55, easing: EASE, fill: 'both' });
+  // departments surface, dots pop, counters roll — then trunks draw + glows bloom
+  function introFleet(base, fast = false) {
+    const step = fast ? 70 : 125;
+    DEPTS.forEach((d, i) => {
+      const D = base + i * step;
+      const c = document.getElementById('dept-' + d.id);
+      c.animate(
+        [{ opacity: 0, transform: 'scale(0.93)' }, { opacity: 1, transform: 'scale(1)' }],
+        { duration: 560, delay: D, easing: EASE, fill: 'both' });
+      c.querySelector('.dcount').animate(
+        [{ opacity: 0 }, { opacity: 1 }],
+        { duration: 400, delay: D + 260, easing: EASE, fill: 'both' });
+      c.querySelectorAll('.adot').forEach((el, j) => el.animate(
+        [{ opacity: 0, transform: 'scale(0)' }, { opacity: 1, transform: 'scale(1)' }],
+        { duration: 340, delay: D + 320 + j * 45, easing: EASE, fill: 'both' }));
+      countUp(c.querySelector('.dstat .num'), d.stat, 900, D + 300);
     });
+    setTimeout(() => {
+      if (level !== 'fleet') return;
+      buildFleetFx();
+      const now = performance.now();
+      strands.forEach((S, i) => { S.revT = now + 140 + i * 170; });
+      glowTarget = 1;
+    }, base + DEPTS.length * step + (fast ? 420 : 820));
+  }
 
-    // agents assemble — surface, then connectors extend outward, ops up, A/B down, counters roll
+  // agents assemble — surface, connectors extend, ops up, A/B down, counters roll
+  function introAgents(base) {
     AGENTS.forEach((a, i) => {
-      const D = BASE + 160 + i * 130;
+      const D = base + i * 115;
       const c = document.getElementById('comp-' + a.id);
       c.querySelector('.card').animate(
         [{ opacity: 0, transform: 'scale(0.93)' }, { opacity: 1, transform: 'scale(1)' }],
@@ -622,17 +833,84 @@
         { duration: 440, delay: D + 430, easing: EASE, fill: 'both' });
       c.querySelectorAll('.ring').forEach((r, j) => countUp(r, a.metrics[j].v, 900, D + 360 + j * 80));
     });
-
-    // strands draw + glows bloom once layout has settled
     setTimeout(() => {
-      buildFx();
+      if (level !== 'agents') return;
+      buildAgentFx();
       const now = performance.now();
-      anim.revA = now + 100;
-      anim.revB = now + 340;
-      anim.glow = now + 380;
-    }, BASE + 160 + 3 * 130 + 900);
+      strands.forEach((S, i) => { S.revT = now + 100 + i * 240; });
+      glowTarget = 1;
+    }, base + AGENTS.length * 115 + 780);
+  }
+
+  /* ── level transitions ── */
+  const bcRoot = document.getElementById('bc-root');
+  const bcTail = document.getElementById('bc-tail');
+  const zlabel = document.getElementById('zlabel');
+  const zin = document.getElementById('zin');
+  const zout = document.getElementById('zout');
+  const input = document.getElementById('cmdinput');
+
+  function toAgents() {
+    if (level !== 'fleet') return;
+    level = 'zoom';
+    glowTarget = 0; strands = null;
+    levF.classList.add('gone');
+    setTimeout(() => {
+      level = 'agents';
+      levA.classList.remove('gone');
+      bcTail.style.display = ''; bcRoot.classList.add('bc-link');
+      zlabel.textContent = 'SALES · 4 AGENTS';
+      zout.classList.remove('off'); zin.classList.add('off');
+      input.placeholder = 'Ask your fleet anything — "why did callbacks drop on Post Care?"';
+      introAgents(140);
+    }, 430);
+  }
+
+  function toFleet() {
+    if (level !== 'agents') return;
+    level = 'zoom';
+    glowTarget = 0; strands = null;
+    levA.classList.add('gone');
+    setTimeout(() => {
+      level = 'fleet';
+      levF.classList.remove('gone');
+      bcTail.style.display = 'none'; bcRoot.classList.remove('bc-link');
+      zlabel.textContent = 'FLEET · 28 AGENTS';
+      zout.classList.add('off'); zin.classList.remove('off');
+      input.placeholder = 'Ask across the fleet — "which department needs attention right now?"';
+      introFleet(120, true);
+    }, 430);
+  }
+
+  bcRoot.addEventListener('click', toFleet);
+  zin.addEventListener('click', () => { if (level === 'fleet') toAgents(); });
+  zout.addEventListener('click', () => { if (level === 'agents') toFleet(); });
+
+  /* ── boot ── */
+  document.fonts.ready.then(() => {
+    requestAnimationFrame(() => { document.querySelector('#boot .bootline i').style.width = '100%'; });
+    requestAnimationFrame(draw);
+
+    const BASE = 820;
+    setTimeout(() => document.getElementById('boot').classList.add('hide'), BASE - 60);
+
+    // chrome drifts in
+    [['#app-menu', '', 0, -10], ['#breadcrumb', '', 0, -10], ['#bell', '', 0, -10],
+     ['#modes', 'translateY(-50%)', -14, 0], ['#filters', '', 0, 12],
+     ['#cmdwrap', 'translateX(-50%)', 0, 14], ['#zoom', '', 0, 12]].forEach(([sel, base, x, y], i) => {
+      document.querySelector(sel).animate(
+        [{ opacity: 0, transform: `${base} translate(${x}px, ${y}px)` },
+         { opacity: 1, transform: `${base} translate(0px, 0px)` }],
+        { duration: 500, delay: BASE + i * 55, easing: EASE, fill: 'both' });
+    });
+
+    level = 'fleet';
+    introFleet(BASE + 160);
   });
-  addEventListener('resize', () => setTimeout(buildFx, 50));
+  addEventListener('resize', () => setTimeout(() => {
+    if (level === 'fleet') { buildFleetFx(); strands.forEach((S) => { S.revT = 0; }); }
+    else if (level === 'agents') { buildAgentFx(); strands.forEach((S) => { S.revT = 0; }); }
+  }, 50));
 
   /* ── analysis chart ── */
   (function buildChart() {
@@ -666,7 +944,6 @@
   })();
 
   /* ── command bar behaviour ── */
-  const input = document.getElementById('cmdinput');
   const card = document.getElementById('anacard');
   const scrim = document.getElementById('scrim');
   const anaStatus = document.getElementById('ana-status');
