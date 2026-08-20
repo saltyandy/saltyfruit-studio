@@ -5,3 +5,10 @@ node_modules/
 assets/video/orb-backdrop.mp4
 assets/lab-live/orb-backdrop.mp4
 .vercel
+
+# Blender working files and capture output — local only
+blender/
+*.blend
+*.blend1
+lab/orb-capture/out/
+lab/perq-capture/out/
